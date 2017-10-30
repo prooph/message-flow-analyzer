@@ -1,0 +1,38 @@
+{
+    "name": "prooph/message-flow-analyzer",
+    "description": "Static code analyzer for prooph projects",
+    "type": "library",
+    "license": "BSD-3-Clause",
+    "homepage": "http://getprooph.org/",
+    "authors": [
+        {
+            "name": "Alexander Miertsch",
+            "email": "contact@prooph.de",
+            "homepage": "http://www.prooph.de"
+        },
+        {
+            "name": "Sascha-Oliver Prolic",
+            "email": "saschaprolic@googlemail.com"
+        }
+    ],
+    "keywords": [
+        "prooph",
+        "analyzer"
+    ],
+    "require": {
+        "nikic/php-parser": "^3.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Prooph\\MessageFlowAnalyzer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ProophTest\\MessageFlowAnalyzer\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "prooph/common": "^4.1"
+    }
+}
