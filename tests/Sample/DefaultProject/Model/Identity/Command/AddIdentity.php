@@ -8,18 +8,13 @@
  * file that was distributed with this source code.
  */
 
-namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command;
+namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Command;
 
 use Prooph\Common\Messaging\Command;
 use Prooph\Common\Messaging\PayloadConstructable;
 use Prooph\Common\Messaging\PayloadTrait;
 
-class RegisterUser extends Command implements PayloadConstructable
+final class AddIdentity extends Command implements PayloadConstructable
 {
     use PayloadTrait;
-
-    public static function registerWithUserId(string $userId): self
-    {
-        return new self(['userId' => $userId]);
-    }
 }

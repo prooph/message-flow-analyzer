@@ -8,8 +8,14 @@
  * file that was distributed with this source code.
  */
 
-namespace Prooph\MessageFlowAnalyzer\MessageFlow;
+namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Listener;
 
-final class MessageHandler extends MessageHandlingMethodAbstract
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserRegistered;
+
+class SendConfirmationEmail
 {
+    public function onUserRegistered(UserRegistered $event)
+    {
+        //send email
+    }
 }

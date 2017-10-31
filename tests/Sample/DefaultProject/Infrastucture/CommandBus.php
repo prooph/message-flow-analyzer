@@ -8,8 +8,11 @@
  * file that was distributed with this source code.
  */
 
-namespace Prooph\MessageFlowAnalyzer\MessageFlow;
+namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Infrastucture;
 
-final class MessageHandler extends MessageHandlingMethodAbstract
+use Prooph\Common\Messaging\Command;
+
+interface CommandBus
 {
+    public function dispatch(Command $command): void;
 }

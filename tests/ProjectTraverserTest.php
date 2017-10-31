@@ -13,13 +13,16 @@ namespace ProophTest\MessageFlowAnalyzer;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
-use Prooph\MessageFlowAnalyzer\MessageFlow\MessageHandler;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageHandlerCollector;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Listener\SendConfirmationEmail;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Command\AddIdentity;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\ChangeUsername;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUser;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUserHandler;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserRegistered;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\ProcessManager\IdentityAdder;
 
 class ProjectTraverserTest extends BaseTestCase
 {
@@ -45,15 +48,28 @@ class ProjectTraverserTest extends BaseTestCase
 
         $this->assertEquals('default', $msgFlow->project());
         $this->assertEquals(__DIR__.DIRECTORY_SEPARATOR.'Sample'.DIRECTORY_SEPARATOR.'DefaultProject', $msgFlow->rootDir());
+
+        $messageNames = array_keys($msgFlow->messages());
+        sort($messageNames);
+
         $this->assertEquals([
+            AddIdentity::class,
+            ChangeUsername::class,
             RegisterUser::class,
             UserRegistered::class,
-        ], array_keys($msgFlow->messages()));
+        ], $messageNames);
 
         $registerUser = $msgFlow->getMessage(RegisterUser::class);
 
-        $handler = $registerUser->handlers()[RegisterUserHandler::class . '::__invoke'];
+        $this->assertEquals([
+            RegisterUserHandler::class . '::__invoke'
+        ], array_keys($registerUser->handlers()));
 
-        $this->assertInstanceOf(MessageHandler::class, $handler);
+        $userRegistered = $msgFlow->getMessage(UserRegistered::class);
+
+        $this->assertEquals([
+            SendConfirmationEmail::class.'::onUserRegistered',
+            IdentityAdder::class.'::'.'onUserRegistered',
+        ], array_keys($userRegistered->handlers()));
     }
 }

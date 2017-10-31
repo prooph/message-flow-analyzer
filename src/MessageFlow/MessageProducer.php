@@ -10,6 +10,6 @@
 
 namespace Prooph\MessageFlowAnalyzer\MessageFlow;
 
-final class MessageHandler extends MessageHandlingMethodAbstract
+final class MessageProducer extends MessageHandlingMethodAbstract
 {
 }

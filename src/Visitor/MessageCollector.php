@@ -19,6 +19,10 @@ class MessageCollector implements ClassVisitor
     public function onClassReflection(ReflectionClass $reflectionClass, MessageFlow $messageFlow): MessageFlow
     {
         if($reflectionClass->implementsInterface(ProophMsg::class)) {
+            if(!MessageFlow\Message::isRealMessage($reflectionClass)) {
+                return $messageFlow;
+            }
+
             $msg = MessageFlow\Message::fromReflectionClass($reflectionClass);
             if(!$messageFlow->knowsMessage($msg->name())) {
                 $messageFlow = $messageFlow->addMessage($msg);

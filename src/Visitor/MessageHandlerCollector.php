@@ -50,6 +50,10 @@ final class MessageHandlerCollector implements ClassVisitor
             return $messageFlow;
         }
 
+        if(!MessageFlow\Message::isRealMessage($reflectionClass)) {
+            return $messageFlow;
+        }
+
         $message = MessageFlow\Message::fromReflectionClass($reflectionClass);
 
         $message = $messageFlow->getMessage($message->name(), $message);

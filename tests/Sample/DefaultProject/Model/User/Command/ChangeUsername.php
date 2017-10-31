@@ -14,12 +14,12 @@ use Prooph\Common\Messaging\Command;
 use Prooph\Common\Messaging\PayloadConstructable;
 use Prooph\Common\Messaging\PayloadTrait;
 
-class RegisterUser extends Command implements PayloadConstructable
+class ChangeUsername extends Command implements PayloadConstructable
 {
     use PayloadTrait;
 
-    public static function registerWithUserId(string $userId): self
+    public static function withNewName(string $name): ChangeUsername
     {
-        return new self(['userId' => $userId]);
+        return new self(['newName' => $name]);
     }
 }

@@ -33,7 +33,8 @@ class MessageTest extends BaseTestCase
             'type' => $registerUser->messageType(),
             'class' => RegisterUser::class,
             'filename' => realpath(__DIR__ . '/../Sample/DefaultProject/Model/User/Command/RegisterUser.php'),
-            'handlers' => []
+            'handlers' => [],
+            'producers' => [],
         ], $message->toArray());
     }
 }
