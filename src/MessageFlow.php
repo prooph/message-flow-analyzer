@@ -88,6 +88,15 @@ final class MessageFlow
         return array_key_exists($messageName, $this->messages);
     }
 
+    public function getMessage(string $name, Message $efault = null): ?Message
+    {
+        if(!array_key_exists($name, $this->messages())) {
+            return $efault;
+        }
+
+        return $this->messages[$name];
+    }
+
     /**
      * @return Message[]
      */
@@ -129,6 +138,11 @@ final class MessageFlow
             throw new \RuntimeException('Message is already known. Got ' . $msg->name());
         }
 
+        return $this->setMessage($msg);
+    }
+
+    public function setMessage(Message $msg): self
+    {
         $cp = clone $this;
         $cp->messages[$msg->name()] = $msg;
         return $cp;

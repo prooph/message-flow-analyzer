@@ -162,7 +162,7 @@ final class Message
     public function addHandler(MessageHandler $messageHandler): self
     {
         $cp = clone $this;
-        $cp->handlers[$messageHandler->class()] = $messageHandler;
+        $cp->handlers[$messageHandler->identifier()] = $messageHandler;
         return $cp;
     }
 

@@ -13,9 +13,12 @@ namespace ProophTest\MessageFlowAnalyzer;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
+use Prooph\MessageFlowAnalyzer\MessageFlow\MessageHandler;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\MessageHandlerCollector;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUser;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUserHandler;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserRegistered;
 
 class ProjectTraverserTest extends BaseTestCase
@@ -33,7 +36,8 @@ class ProjectTraverserTest extends BaseTestCase
                 new IncludePHPFile()
             ],
             [
-                new MessageCollector()
+                new MessageCollector(),
+                new MessageHandlerCollector()
             ]
         );
 
@@ -45,5 +49,11 @@ class ProjectTraverserTest extends BaseTestCase
             RegisterUser::class,
             UserRegistered::class,
         ], array_keys($msgFlow->messages()));
+
+        $registerUser = $msgFlow->getMessage(RegisterUser::class);
+
+        $handler = $registerUser->handlers()[RegisterUserHandler::class . '::__invoke'];
+
+        $this->assertInstanceOf(MessageHandler::class, $handler);
     }
 }

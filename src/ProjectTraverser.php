@@ -11,13 +11,11 @@
 namespace Prooph\MessageFlowAnalyzer;
 
 use Prooph\MessageFlowAnalyzer\Filter\FileInfoFilter;
-use Prooph\MessageFlowAnalyzer\Filter\RecursiveFileInfoFilter;
 use Prooph\MessageFlowAnalyzer\Visitor\ClassVisitor;
 use Prooph\MessageFlowAnalyzer\Visitor\FileInfoVisitor;
 use Roave\BetterReflection\BetterReflection;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflector\ClassReflector;
-use Roave\BetterReflection\SourceLocator\Type\ComposerSourceLocator;
 use Roave\BetterReflection\SourceLocator\Type\SingleFileSourceLocator;
 
 final class ProjectTraverser
