@@ -11,8 +11,6 @@
 namespace Prooph\MessageFlowAnalyzer\Visitor;
 
 use PhpParser\NodeTraverser;
-use Prooph\EventSourcing\Aggregate\EventProducerTrait;
-use Prooph\EventSourcing\AggregateRoot;
 use Prooph\MessageFlowAnalyzer\MessageFlow;
 use Prooph\Common\Messaging\Message as ProophMsg;
 use Prooph\MessageFlowAnalyzer\PhpParser\MessageScanner;
@@ -33,28 +31,11 @@ class MessageProducerCollector implements ClassVisitor
             return $messageFlow;
         }
 
-        if($this->isAggregateRoot($reflectionClass)) {
+        if(MessageFlow\EventRecorder::isEventRecorder($reflectionClass)) {
             return $messageFlow;
         }
 
         return $this->checkMessageProduction($reflectionClass, $messageFlow);
-    }
-
-    private function isAggregateRoot(ReflectionClass $reflectionClass): bool
-    {
-        if($reflectionClass->isSubclassOf(AggregateRoot::class)) {
-            return true;
-        }
-
-        $traits = $reflectionClass->getTraits();
-
-        foreach ($traits as $trait) {
-            if($trait->getName() === EventProducerTrait::class) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private function checkMessageProduction(ReflectionClass $reflectionClass, MessageFlow $msgFlow): MessageFlow
@@ -77,7 +58,13 @@ class MessageProducerCollector implements ClassVisitor
      */
     private function checkMethodProducesMessages(ReflectionMethod $method): array
     {
-        $this->getTraverser()->traverse($method->getBodyAst());
+        try {
+            $bodyAst = $method->getBodyAst();
+        } catch (\TypeError $error) {
+            return [];
+        }
+
+        $this->getTraverser()->traverse($bodyAst);
         return $this->getTraverser()->messageScanner()->popFoundMessages();
     }
 

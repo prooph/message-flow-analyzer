@@ -72,7 +72,7 @@ final class ProjectTraverser
         $msgFlow = MessageFlow::newFlow($this->project, $dir);
 
         $directory = new \RecursiveDirectoryIterator($msgFlow->rootDir());
-        $filter = new \RecursiveCallbackFilterIterator($directory, function ($current, $key, $iterator) use ($msgFlow) {
+        $filter = new \RecursiveCallbackFilterIterator($directory, function ($current) use ($msgFlow) {
             foreach ($this->fileInfoFilters as $filter) {
                 if(!$filter->accept($current, $msgFlow->rootDir())) {
                     return false;

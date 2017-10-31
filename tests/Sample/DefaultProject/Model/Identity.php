@@ -11,15 +11,14 @@
 namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model;
 
 use Prooph\EventSourcing\AggregateChanged;
-use Prooph\EventSourcing\AggregateRoot;
 
-class User extends AggregateRoot
+final class Identity extends EventProducerAbstract
 {
-    private $userId;
+    private $identityId;
 
     protected function aggregateId(): string
     {
-        return $this->userId;
+        return $this->identityId;
     }
 
     /**
@@ -27,9 +26,5 @@ class User extends AggregateRoot
      */
     protected function apply(AggregateChanged $event): void
     {
-        switch ($event->messageName()) {
-            default:
-                //do nothing
-        }
     }
 }

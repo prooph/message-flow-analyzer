@@ -16,6 +16,7 @@ use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageHandlerCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Listener\SendConfirmationEmail;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Command\AddIdentity;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\ChangeUsername;
@@ -40,7 +41,8 @@ class ProjectTraverserTest extends BaseTestCase
             ],
             [
                 new MessageCollector(),
-                new MessageHandlerCollector()
+                new MessageHandlerCollector(),
+                new MessageProducerCollector(),
             ]
         );
 
