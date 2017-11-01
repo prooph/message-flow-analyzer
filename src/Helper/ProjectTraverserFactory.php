@@ -45,17 +45,17 @@ final class ProjectTraverserFactory
         $traverser = new ProjectTraverser($config['name']);
 
         foreach ($config['fileInfoFilters'] ?? [] as $filterClass) {
-            $filterClass = self::$filterAliases[$filterClass] ?: $filterClass;
+            $filterClass = self::$filterAliases[$filterClass] ?? $filterClass;
             $traverser->addFileInfoFilter(new $filterClass);
         }
 
         foreach ($config['classVisitors'] ?? [] as $classVisitorClass) {
-            $classVisitorClass = self::$classVisitorAliases[$classVisitorClass] ?: $classVisitorClass;
+            $classVisitorClass = self::$classVisitorAliases[$classVisitorClass] ?? $classVisitorClass;
             $traverser->addClassVisitor(new $classVisitorClass);
         }
 
         foreach ($config['fileInfoVisitors'] ?? [] as $fileInfoVisitorClass) {
-            $fileInfoVisitorClass = self::$fileInfoVisitorAliases[$fileInfoVisitorClass] ?: $fileInfoVisitorClass;
+            $fileInfoVisitorClass = self::$fileInfoVisitorAliases[$fileInfoVisitorClass] ?? $fileInfoVisitorClass;
             $traverser->addFileInfoVisitor(new $fileInfoVisitorClass);
         }
 
