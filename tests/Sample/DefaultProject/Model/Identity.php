@@ -11,10 +11,18 @@
 namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model;
 
 use Prooph\EventSourcing\AggregateChanged;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Event\IdentityAdded;
 
 final class Identity extends EventProducerAbstract
 {
     private $identityId;
+
+    public static function add(string $identityId): self
+    {
+        $self = new self();
+        //Note: this won't work if it would be executed but we want to test that non AggregateChanged events are tracked, too
+        $self->recordThat(new IdentityAdded($identityId));
+    }
 
     protected function aggregateId(): string
     {

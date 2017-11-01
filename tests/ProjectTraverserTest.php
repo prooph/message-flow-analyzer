@@ -14,14 +14,20 @@ use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
+use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageHandlerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Controller\UserController;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Listener\SendConfirmationEmail;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Command\AddIdentity;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Event\IdentityAdded;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\ChangeUsername;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUser;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUserHandler;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UsernameChanged;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserRegistered;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\ProcessManager\IdentityAdder;
 
@@ -43,6 +49,7 @@ class ProjectTraverserTest extends BaseTestCase
                 new MessageCollector(),
                 new MessageHandlerCollector(),
                 new MessageProducerCollector(),
+                new EventRecorderCollector(),
             ]
         );
 
@@ -56,16 +63,22 @@ class ProjectTraverserTest extends BaseTestCase
 
         $this->assertEquals([
             AddIdentity::class,
+            IdentityAdded::class,
             ChangeUsername::class,
             RegisterUser::class,
             UserRegistered::class,
+            UsernameChanged::class,
         ], $messageNames);
 
         $registerUser = $msgFlow->getMessage(RegisterUser::class);
 
         $this->assertEquals([
-            RegisterUserHandler::class . '::__invoke'
+            RegisterUserHandler::class . '::__invoke',
         ], array_keys($registerUser->handlers()));
+
+        $this->assertEquals([
+            UserController::class . '::postAction',
+        ], array_keys($registerUser->producers()));
 
         $userRegistered = $msgFlow->getMessage(UserRegistered::class);
 
@@ -73,5 +86,27 @@ class ProjectTraverserTest extends BaseTestCase
             SendConfirmationEmail::class.'::onUserRegistered',
             IdentityAdder::class.'::'.'onUserRegistered',
         ], array_keys($userRegistered->handlers()));
+
+        $this->assertEquals([
+            User::class.'::register',
+        ], array_keys($userRegistered->recorders()));
+
+        $changeUsername = $msgFlow->getMessage(ChangeUsername::class);
+
+        $this->assertEquals([
+            UserController::class . '::patchAction',
+        ], array_keys($changeUsername->producers()));
+
+        $addIdentity = $msgFlow->getMessage(AddIdentity::class);
+
+        $this->assertEquals([
+            IdentityAdder::class . '::onUserRegistered',
+        ], array_keys($addIdentity->producers()));
+
+        $identityAdded = $msgFlow->getMessage(IdentityAdded::class);
+
+        $this->assertEquals([
+            Identity::class.'::add',
+        ], array_keys($identityAdded->recorders()));
     }
 }

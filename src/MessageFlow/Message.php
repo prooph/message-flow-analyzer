@@ -48,6 +48,11 @@ final class Message
      */
     private $producers;
 
+    /**
+     * @var EventRecorder[]
+     */
+    private $recorders;
+
     public static function isRealMessage(ReflectionClass $proophMessage): bool
     {
         if($proophMessage->isAnonymous() || $proophMessage->isAbstract() || $proophMessage->isInterface()) {
@@ -88,6 +93,7 @@ final class Message
             $phpReflectionhMessage->getName(),
             $phpReflectionhMessage->getFileName(),
             [],
+            [],
             []
         );
     }
@@ -110,17 +116,26 @@ final class Message
             return MessageProducer::fromArray($producer);
         }, $data['producers'] ?? []);
 
+        $recorders = array_map(function($recorder): EventRecorder {
+            if($recorder instanceof EventRecorder) {
+                return $recorder;
+            }
+
+            return EventRecorder::fromArray($recorder);
+        }, $data['recorders'] ?? []);
+
         return new self(
             $data['name'] ?? '',
             $data['type'] ?? '',
             $data['class'] ?? '',
             $data['filename'] ?? '',
             $handlers,
-            $producers
+            $producers,
+            $recorders
         );
     }
 
-    private function __construct(string $name, string $type, string $class, string $filename, array $handlers, array $producers)
+    private function __construct(string $name, string $type, string $class, string $filename, array $handlers, array $producers, array $recorders)
     {
         MessageDataAssertion::assertMessageName($name);
 
@@ -138,6 +153,7 @@ final class Message
 
         array_walk($handlers, function (MessageHandler $handler) {});
         array_walk($producers, function (MessageProducer $producer) {});
+        array_walk($recorders, function (EventRecorder $recorder) {});
 
         $this->name = $name;
         $this->type = $type;
@@ -145,6 +161,7 @@ final class Message
         $this->filename = $filename;
         $this->handlers = $handlers;
         $this->producers = $producers;
+        $this->recorders = $recorders;
     }
 
     /**
@@ -195,6 +212,14 @@ final class Message
         return $this->producers;
     }
 
+    /**
+     * @return EventRecorder[]
+     */
+    public function recorders(): array
+    {
+        return $this->recorders;
+    }
+
     public function addHandler(MessageHandler $messageHandler): self
     {
         $cp = clone $this;
@@ -209,6 +234,13 @@ final class Message
         return $cp;
     }
 
+    public function addRecorder(EventRecorder $eventRecorder): self
+    {
+        $cp = clone $this;
+        $cp->recorders[$eventRecorder->identifier()] = $eventRecorder;
+        return $cp;
+    }
+
     public function toArray(): array
     {
         return [
@@ -217,7 +249,8 @@ final class Message
             'class' => $this->class,
             'filename' => $this->filename,
             'handlers' => array_map(function(MessageHandler $handler) {return $handler->toArray();}, $this->handlers),
-            'producers' => array_map(function(MessageProducer $producer) {return $producer->toArray();}, $this->producers()),
+            'producers' => array_map(function(MessageProducer $producer) {return $producer->toArray();}, $this->producers),
+            'recorders' => array_map(function (EventRecorder $recorder) {return $recorder->toArray();}, $this->recorders),
         ];
     }
 

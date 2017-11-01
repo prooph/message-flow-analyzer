@@ -10,20 +10,15 @@
 
 namespace Prooph\MessageFlowAnalyzer\Visitor;
 
-use PhpParser\NodeTraverser;
+use Prooph\MessageFlowAnalyzer\Helper\MessageProducingMethodScanner;
 use Prooph\MessageFlowAnalyzer\MessageFlow;
 use Prooph\Common\Messaging\Message as ProophMsg;
-use Prooph\MessageFlowAnalyzer\PhpParser\MessageScanner;
-use Prooph\MessageFlowAnalyzer\PhpParser\MessageScanningNodeTraverser;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
 
 class MessageProducerCollector implements ClassVisitor
 {
-    /**
-     * @var MessageScanningNodeTraverser
-     */
-    private $nodeTraverser;
+    use MessageProducingMethodScanner;
 
     public function onClassReflection(ReflectionClass $reflectionClass, MessageFlow $messageFlow): MessageFlow
     {
@@ -35,45 +30,12 @@ class MessageProducerCollector implements ClassVisitor
             return $messageFlow;
         }
 
-        return $this->checkMessageProduction($reflectionClass, $messageFlow);
-    }
-
-    private function checkMessageProduction(ReflectionClass $reflectionClass, MessageFlow $msgFlow): MessageFlow
-    {
-        foreach ($reflectionClass->getMethods() as $method) {
-            $messages = $this->checkMethodProducesMessages($method);
-            foreach ($messages as $message) {
-                $message = $msgFlow->getMessage($message->name(), $message);
-                $message = $message->addProducer(MessageFlow\MessageProducer::fromReflectionMethod($method));
-                $msgFlow = $msgFlow->setMessage($message);
-            }
-        }
-
-        return $msgFlow;
-    }
-
-    /**
-     * @param ReflectionMethod $method
-     * @return MessageFlow\Message[]|null
-     */
-    private function checkMethodProducesMessages(ReflectionMethod $method): array
-    {
-        try {
-            $bodyAst = $method->getBodyAst();
-        } catch (\TypeError $error) {
-            return [];
-        }
-
-        $this->getTraverser()->traverse($bodyAst);
-        return $this->getTraverser()->messageScanner()->popFoundMessages();
-    }
-
-    private function getTraverser(): MessageScanningNodeTraverser
-    {
-        if(null === $this->nodeTraverser) {
-            $this->nodeTraverser = new MessageScanningNodeTraverser(new NodeTraverser(), new MessageScanner());
-        }
-
-        return $this->nodeTraverser;
+        return $this->checkMessageProduction(
+            $reflectionClass,
+            function (MessageFlow\Message $message, ReflectionMethod $method): MessageFlow\Message {
+                return $message->addProducer(MessageFlow\MessageProducer::fromReflectionMethod($method));
+            },
+            $messageFlow
+        );
     }
 }

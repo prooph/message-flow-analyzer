@@ -12,6 +12,7 @@ namespace Prooph\MessageFlowAnalyzer\MessageFlow;
 
 use Prooph\EventSourcing\Aggregate\EventProducerTrait;
 use Prooph\EventSourcing\AggregateRoot;
+use Prooph\MessageFlowAnalyzer\Helper\Util;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 
 final class EventRecorder extends MessageHandlingMethodAbstract
@@ -22,28 +23,6 @@ final class EventRecorder extends MessageHandlingMethodAbstract
             return true;
         }
 
-        $traits = self::getAllTraits($reflectionClass);
-
-        foreach ($traits as $trait) {
-            if($trait->getName() === EventProducerTrait::class) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static function getAllTraits(ReflectionClass $reflectionClass): array
-    {
-        $traits = $reflectionClass->getTraits();
-
-        $parentClass = $reflectionClass->getParentClass();
-
-        if($parentClass) {
-            $parentTraits = self::getAllTraits($parentClass);
-            $traits = array_merge($traits, $parentTraits);
-        }
-
-        return $traits;
+        return Util::usesTrait(EventProducerTrait::class, $reflectionClass);
     }
 }

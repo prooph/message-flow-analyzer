@@ -35,6 +35,7 @@ class MessageTest extends BaseTestCase
             'filename' => realpath(__DIR__ . '/../Sample/DefaultProject/Model/User/Command/RegisterUser.php'),
             'handlers' => [],
             'producers' => [],
+            'recorders' => [],
         ], $message->toArray());
     }
 }

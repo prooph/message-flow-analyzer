@@ -110,7 +110,6 @@ final class ProjectTraverser
         $sourceReflector = new ClassReflector($fileLocator);
         $classes = $sourceReflector->getAllClasses();
 
-
         foreach ($classes as $class) {
             //Recreate reflection class so that autoloader is used under the hood (not the case with file source loader)
             $class = ReflectionClass::createFromName($class->getName());

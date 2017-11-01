@@ -8,7 +8,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Prooph\MessageFlowAnalyzer\PhpParser;
+namespace Prooph\MessageFlowAnalyzer\Helper\PhpParser;
 
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
