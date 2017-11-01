@@ -81,7 +81,7 @@ EOT
 
         file_put_contents($targetFile, json_encode($msgFlow->toArray(), JSON_PRETTY_PRINT));
 
-        $output->writeln('<info>Analyze written to '.$targetFile.'</info>');
+        $output->writeln('<info>Analysis written to '.$targetFile.'</info>');
         exit(0);
     }
 }
