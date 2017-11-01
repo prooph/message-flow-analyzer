@@ -1,0 +1,14 @@
+{
+  "name": "Default Project",
+  "fileInfoFilters": [
+    "ExcludeVendorDir",
+    "ExcludeHiddenFileInfo",
+    "IncludePHPFile"
+  ],
+  "classVisitors": [
+    "MessageCollector",
+    "MessageHandlerCollector",
+    "MessageProducerCollector",
+    "EventRecorderCollector"
+  ]
+}

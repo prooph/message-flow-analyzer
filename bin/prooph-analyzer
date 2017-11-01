@@ -1,0 +1,41 @@
+#!/usr/bin/env php
+<?php
+/**
+ * This file is part of the prooph/message-flow-analyzer.
+ * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+foreach (
+    [
+        __DIR__ . '/../../../autoload.php',
+        __DIR__ . '/../../autoload.php',
+        __DIR__ . '/../vendor/autoload.php',
+        __DIR__ . '/vendor/autoload.php',
+    ] as $file
+) {
+    if (file_exists($file)) {
+        define('PROOPHCLI_COMPOSER_INSTALL', $file);
+        break;
+    }
+}
+unset($file);
+
+if (!defined('PROOPHCLI_COMPOSER_INSTALL')) {
+    fwrite(STDERR,
+        'You need to set up the project dependencies using the following commands:' . PHP_EOL .
+        'wget http://getcomposer.org/composer.phar' . PHP_EOL .
+        'php composer.phar install' . PHP_EOL
+    );
+    die(1);
+}
+
+require PROOPHCLI_COMPOSER_INSTALL;
+
+$cli = new \Symfony\Component\Console\Application('prooph message flow analyzer');
+
+$cli->add(new \Prooph\MessageFlowAnalyzer\Cli\AnalyzeProjectCommand());
+
+$cli->run();

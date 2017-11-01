@@ -40,7 +40,7 @@ final class ProjectTraverser
      */
     private $fileInfoFilters = [];
 
-    public function __construct(string $project, array $fileInfoFilters, array $classVisitors, array $fileInfoVisitors = [])
+    public function __construct(string $project, array $fileInfoFilters = [], array $classVisitors = [], array $fileInfoVisitors = [])
     {
         //Use PHPs runtime type validation
         array_walk($fileInfoFilters, function (FileInfoFilter $filter) {});
