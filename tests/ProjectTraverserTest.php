@@ -11,6 +11,7 @@
 namespace ProophTest\MessageFlowAnalyzer;
 
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
+use Prooph\MessageFlowAnalyzer\Filter\ExcludeTestsDir;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
@@ -42,6 +43,7 @@ class ProjectTraverserTest extends BaseTestCase
             'default',
             [
                 new ExcludeVendorDir(),
+                new ExcludeTestsDir(),
                 new ExcludeHiddenFileInfo(),
                 new IncludePHPFile()
             ],

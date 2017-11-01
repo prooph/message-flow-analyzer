@@ -2,6 +2,7 @@
   "name": "Default Project",
   "fileInfoFilters": [
     "ExcludeVendorDir",
+    "ExcludeTestsDir",
     "ExcludeHiddenFileInfo",
     "IncludePHPFile"
   ],

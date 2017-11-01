@@ -11,6 +11,7 @@
 namespace Prooph\MessageFlowAnalyzer\Helper;
 
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
+use Prooph\MessageFlowAnalyzer\Filter\ExcludeTestsDir;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
@@ -23,6 +24,7 @@ final class ProjectTraverserFactory
 {
     public static $filterAliases = [
         'ExcludeVendorDir' => ExcludeVendorDir::class,
+        'ExcludeTestsDir' => ExcludeTestsDir::class,
         'ExcludeHiddenFileInfo' => ExcludeHiddenFileInfo::class,
         'IncludePHPFile' => IncludePHPFile::class,
     ];
