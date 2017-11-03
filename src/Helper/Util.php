@@ -28,4 +28,15 @@ final class Util
 
         return $parentClass? self::usesTrait($traitName, $parentClass) : false;
     }
+
+    public static function withoutNamespace(string $class): string
+    {
+        $parts = explode('\\', $class);
+        return array_pop($parts);
+    }
+
+    public static function identifierToKey(string $identifier): string
+    {
+        return sha1($identifier);
+    }
 }

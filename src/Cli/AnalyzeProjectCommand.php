@@ -27,6 +27,7 @@ class AnalyzeProjectCommand extends Command
             ->addArgument('dir', InputArgument::OPTIONAL, 'The project directory', null)
             ->addOption('config', 'c', InputOption::VALUE_OPTIONAL, 'Path to config', './prooph_analyzer.json')
             ->addOption('output', 'o', InputOption::VALUE_OPTIONAL, 'Output file', './prooph_message_flow.json')
+            ->addOption('format', 'f', InputOption::VALUE_OPTIONAL, 'Output format', 'JsonPrettyPrint')
             ->setHelp(<<<EOT
 The command analyzes prooph message flow of a project:
 
@@ -38,6 +39,9 @@ If no <comment>--config</comment> option is provided a prooph_analyzer.json in t
 
 <info>%command.full_name% --output /path/to/existing/target/dir/flow.json /path/to/project</info>
 If no <comment>--output</comment> option is provided a prooph_message_flow.json is written to current working dir.
+
+<info>%command.full_name% --format JsonArangoGraphNodes</info>
+Specify format of the output - JsonPrettyPrint by default.
 EOT
             );
         parent::configure();
@@ -74,14 +78,16 @@ EOT
         $output->writeln('Using config ' . $configPath);
 
         $targetFile = $input->getOption('output');
+        $formatterName = $input->getOption('format');
 
         $traverser = ProjectTraverserFactory::buildTraverserFromConfig($config);
+        $formatter = ProjectTraverserFactory::buildOutputFormatter($formatterName);
 
         $msgFlow = $traverser->traverse($rootDir);
 
-        file_put_contents($targetFile, json_encode($msgFlow->toArray(), JSON_PRETTY_PRINT));
+        file_put_contents($targetFile, $formatter->messageFlowToString($msgFlow));
 
-        $output->writeln('<info>Analysis written to '.$targetFile.'</info>');
+        $output->writeln('<info>Analysis written to '.$targetFile.'</info> using format: ' . $formatterName);
         exit(0);
     }
 }

@@ -14,6 +14,9 @@ use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeTestsDir;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
+use Prooph\MessageFlowAnalyzer\Output\Formatter;
+use Prooph\MessageFlowAnalyzer\Output\JsonArangoGraphNodes;
+use Prooph\MessageFlowAnalyzer\Output\JsonPrettyPrint;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
 use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderInvokerCollector;
@@ -40,6 +43,11 @@ final class ProjectTraverserFactory
 
     public static $fileInfoVisitorAliases = [];
 
+    public static $outputFormatterAliases = [
+        'JsonPrettyPrint' => JsonPrettyPrint::class,
+        'JsonArangoGraphNodes' => JsonArangoGraphNodes::class,
+    ];
+
     public static function buildTraverserFromConfig(array $config): ProjectTraverser
     {
         if(!array_key_exists('name', $config)) {
@@ -64,5 +72,12 @@ final class ProjectTraverserFactory
         }
 
         return $traverser;
+    }
+
+    public static function buildOutputFormatter(string $nameOrClass): Formatter
+    {
+        $nameOrClass = self::$outputFormatterAliases[$nameOrClass] ?? $nameOrClass;
+
+        return new $nameOrClass;
     }
 }
