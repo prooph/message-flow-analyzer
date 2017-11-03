@@ -84,8 +84,8 @@ final class JsonArangoGraphNodes implements Formatter
         }
 
         return json_encode([
-            'messages' => $messages,
-            'handlers' => $handlers,
+            'messages' => array_values($messages),
+            'handlers' => array_values($handlers),
             'edges' => $edges
         ], JSON_PRETTY_PRINT);
     }
