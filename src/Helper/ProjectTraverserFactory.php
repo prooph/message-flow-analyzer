@@ -16,6 +16,7 @@ use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
 use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderInvokerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageHandlerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
@@ -34,6 +35,7 @@ final class ProjectTraverserFactory
         'MessageHandlerCollector' => MessageHandlerCollector::class,
         'MessageProducerCollector' => MessageProducerCollector::class,
         'EventRecorderCollector' => EventRecorderCollector::class,
+        'EventRecorderInvokerCollector' => EventRecorderInvokerCollector::class,
     ];
 
     public static $fileInfoVisitorAliases = [];

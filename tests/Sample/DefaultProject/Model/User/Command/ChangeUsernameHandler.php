@@ -10,25 +10,26 @@
 
 namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command;
 
-use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\UserRepository;
 
-class RegisterUserHandler
+class ChangeUsernameHandler
 {
     /**
      * @var UserRepository
      */
     private $userRepository;
 
-    public function __construct(UserRepository $repository)
+    public function __construct(UserRepository $userRepository)
     {
-        $this->userRepository = $repository;
+        $this->userRepository = $userRepository;
     }
 
-    public function __invoke(RegisterUser $command)
+    public function handle(ChangeUsername $command): void
     {
-        $user = User::register($command->payload()['userId']);
+        $user = $this->userRepository->get($command->payload()['userId']);
 
-        $this->userRepository->add($user);
+        $user->changeUsername($command->payload()['username']);
+
+        $this->userRepository->save($user);
     }
 }

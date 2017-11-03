@@ -11,7 +11,9 @@
 namespace Prooph\MessageFlowAnalyzer;
 
 use Prooph\Common\Messaging\MessageDataAssertion;
+use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorderInvoker;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
+use Prooph\Common\Messaging\Message as ProophMsg;
 
 final class MessageFlow
 {
@@ -31,14 +33,27 @@ final class MessageFlow
     private $messages;
 
     /**
+     * @var EventRecorderInvoker[]
+     */
+    private $eventRecorderInvokers;
+
+    /**
      * @var array
      */
     private $attributes;
+
+    /**
+     * Internal cache which is reset when a new command message is set
+     *
+     * @var string[]
+     */
+    private $commandHandlers;
 
     public static function newFlow(string $project, string $rootDir): self
     {
         return new self($project, $rootDir, [
             'messages' => [],
+            'eventRecorderInvokers' => [],
             'attributes' => [],
         ]);
     }
@@ -64,6 +79,7 @@ final class MessageFlow
         $this->project = $project;
         $this->rootDir = $rootDir;
         $this->messages = $flow['messages'] ?? [];
+        $this->eventRecorderInvokers = $flow['eventRecorderInvokers'] ?? [];
         $this->attributes = $flow['attributes'] ?? [];
     }
 
@@ -103,6 +119,21 @@ final class MessageFlow
     public function messages(): array
     {
         return $this->messages;
+    }
+
+    /**
+     * @return EventRecorderInvoker[]
+     */
+    public function eventRecorderInvokers(): array
+    {
+        return $this->eventRecorderInvokers;
+    }
+
+    public function setEventRecorderInvoker(EventRecorderInvoker $invoker): self
+    {
+        $cp = clone $this;
+        $cp->eventRecorderInvokers[$invoker->identifier()] = $invoker;
+        return $cp;
     }
 
     public function attributes(): array
@@ -145,7 +176,37 @@ final class MessageFlow
     {
         $cp = clone $this;
         $cp->messages[$msg->name()] = $msg;
+
+        //Reset internal cmd handler cache
+        if($msg->type() === ProophMsg::TYPE_COMMAND) {
+            $cp->commandHandlers = null;
+        }
+
         return $cp;
+    }
+
+    /**
+     * Returns a list of class and/or function names of command handlers
+     *
+     * @return string[]
+     */
+    public function getKnownCommandHandlers(): array
+    {
+        if(null === $this->commandHandlers) {
+            $this->commandHandlers = [];
+
+            foreach ($this->messages() as $message) {
+                if($message->type() !== ProophMsg::TYPE_COMMAND) {
+                    continue;
+                }
+
+                foreach ($message->handlers() as $handler) {
+                    $this->commandHandlers[] = $handler->isClass()? $handler->class() : $handler->function();
+                }
+            }
+        }
+
+        return $this->commandHandlers;
     }
 
     public function toArray(): array
@@ -181,6 +242,13 @@ final class MessageFlow
 
                 return Message::fromArray($msg);
             }, $flow['messages'] ?? []),
+            'eventRecorderInvokers' => array_map(function ($invoker): EventRecorderInvoker {
+                if($invoker instanceof EventRecorderInvoker) {
+                    return $invoker;
+                }
+
+                return EventRecorderInvoker::fromArray($invoker);
+            }, $flow['eventRecorderInvoker'] ?? []),
             'attributes' => $flow['attributes'],
         ];
     }
@@ -189,6 +257,7 @@ final class MessageFlow
     {
         return [
             'messages' => array_map(function (Message $msg): array {return $msg->toArray();}, $this->messages),
+            'eventRecorderInvokers' => array_map(function (EventRecorderInvoker $invoker): array {return $invoker->toArray();}, $this->eventRecorderInvokers),
             'attributes' => $this->attributes,
         ];
     }

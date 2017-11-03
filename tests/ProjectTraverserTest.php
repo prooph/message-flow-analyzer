@@ -16,6 +16,7 @@ use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
 use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderInvokerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageHandlerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
@@ -52,6 +53,7 @@ class ProjectTraverserTest extends BaseTestCase
                 new MessageHandlerCollector(),
                 new MessageProducerCollector(),
                 new EventRecorderCollector(),
+                new EventRecorderInvokerCollector()
             ]
         );
 
@@ -110,5 +112,10 @@ class ProjectTraverserTest extends BaseTestCase
         $this->assertEquals([
             Identity::class.'::add',
         ], array_keys($identityAdded->recorders()));
+
+        $this->assertEquals([
+            User\Command\ChangeUsernameHandler::class.'::handle->'.User::class.'::changeUsername',
+            RegisterUserHandler::class.'::__invoke->'.User::class.'::register',
+        ], array_keys($msgFlow->eventRecorderInvokers()));
     }
 }
