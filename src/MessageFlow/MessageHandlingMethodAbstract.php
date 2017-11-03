@@ -10,6 +10,9 @@
 
 namespace Prooph\MessageFlowAnalyzer\MessageFlow;
 
+use Roave\BetterReflection\Reflection\ReflectionClass;
+use Roave\BetterReflection\Reflection\ReflectionFunction;
+use Roave\BetterReflection\Reflection\ReflectionFunctionAbstract;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
 
 class MessageHandlingMethodAbstract
@@ -108,6 +111,15 @@ class MessageHandlingMethodAbstract
     public function filename(): string
     {
         return $this->filename;
+    }
+
+    public function toFunctionLike(): ReflectionFunctionAbstract
+    {
+        if(!$this->isClass()) {
+            return ReflectionFunction::createFromName($this->function());
+        } else {
+            return ReflectionClass::createFromName($this->class())->getMethod($this->function());
+        }
     }
 
     public function toArray(): array

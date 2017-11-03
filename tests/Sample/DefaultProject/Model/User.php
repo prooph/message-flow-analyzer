@@ -33,6 +33,11 @@ class User extends AggregateRoot
         $this->recordThat($usernameChanged);
     }
 
+    public function addIdentity(string $identityId): Identity
+    {
+        return Identity::add($identityId);
+    }
+
     protected function aggregateId(): string
     {
         return $this->userId;

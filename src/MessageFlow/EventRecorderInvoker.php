@@ -15,43 +15,43 @@ final class EventRecorderInvoker
     /**
      * @var string
      */
-    private $messageHandlerIdentifier;
+    private $invokerIdentifier;
 
     /**
      * @var string
      */
     private $eventRecorderIdentifier;
 
-    public static function fromMessageHandlerAndEventRecorder(MessageHandler $messageHandler, EventRecorder $eventRecorder): self
+    public static function fromInvokerAndEventRecorder(MessageHandlingMethodAbstract $invoker, EventRecorder $eventRecorder): self
     {
         return new self(
-            $messageHandler->identifier(),
+            $invoker->identifier(),
             $eventRecorder->identifier()
         );
     }
 
     public static function fromArray(array $data): self
     {
-        return new self($data['messageHandlerIdentifier'] ?? '', $data['eventRecorderIdentifier'] ?? '');
+        return new self($data['invokerIdentifier'] ?? '', $data['eventRecorderIdentifier'] ?? '');
     }
 
-    private function __construct(string $messageHandlerIdentifier, string $eventRecorderIdentifier)
+    private function __construct(string $invokerIdentifier, string $eventRecorderIdentifier)
     {
-        $this->messageHandlerIdentifier = $messageHandlerIdentifier;
+        $this->invokerIdentifier = $invokerIdentifier;
         $this->eventRecorderIdentifier = $eventRecorderIdentifier;
     }
 
     public function identifier(): string
     {
-        return $this->messageHandlerIdentifier() . '->' . $this->eventRecorderIdentifier();
+        return $this->invokerIdentifier() . '->' . $this->eventRecorderIdentifier();
     }
 
     /**
      * @return string
      */
-    public function messageHandlerIdentifier(): string
+    public function invokerIdentifier(): string
     {
-        return $this->messageHandlerIdentifier;
+        return $this->invokerIdentifier;
     }
 
     /**
@@ -65,7 +65,7 @@ final class EventRecorderInvoker
     public function toArray(): array
     {
         return [
-            'messageHandlerIdentifier' => $this->messageHandlerIdentifier,
+            'invokerIdentifier' => $this->invokerIdentifier,
             'eventRecorderIdentifier' => $this->eventRecorderIdentifier
         ];
     }

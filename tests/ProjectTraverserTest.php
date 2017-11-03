@@ -68,6 +68,7 @@ class ProjectTraverserTest extends BaseTestCase
         $this->assertEquals([
             AddIdentity::class,
             IdentityAdded::class,
+            User\Command\AddUserIdentity::class,
             ChangeUsername::class,
             RegisterUser::class,
             UserRegistered::class,
@@ -111,11 +112,14 @@ class ProjectTraverserTest extends BaseTestCase
 
         $this->assertEquals([
             Identity::class.'::add',
+            Identity::class.'::addForUser',
         ], array_keys($identityAdded->recorders()));
 
         $this->assertEquals([
             User\Command\ChangeUsernameHandler::class.'::handle->'.User::class.'::changeUsername',
             RegisterUserHandler::class.'::__invoke->'.User::class.'::register',
+            User\Command\AddUserIdentityHandler::class.'::__invoke->'.User::class.'::addIdentity',
+            User::class.'::addIdentity->'.Identity::class.'::add',
         ], array_keys($msgFlow->eventRecorderInvokers()));
     }
 }

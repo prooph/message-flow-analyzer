@@ -14,6 +14,7 @@ use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Prooph\MessageFlowAnalyzer\MessageFlow\MessageHandler;
 use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderInvokerCollector;
 use ProophTest\MessageFlowAnalyzer\BaseTestCase;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUser;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUserHandler;
@@ -76,6 +77,31 @@ class EventRecorderInvokerCollectorTest extends BaseTestCase
 
         $this->assertEquals([
             User\Command\ChangeUsernameHandler::class.'::handle->'.User::class.'::changeUsername',
+        ], array_keys($msgFlow->eventRecorderInvokers()));
+    }
+
+    /**
+     * @test
+     */
+    public function it_identifies_event_recorder_method_used_as_factory_for_another_event_recorder()
+    {
+        $msgFlow = $this->getDefaultProjectMessageFlow();
+
+        $addUserIdentity = Message::fromReflectionClass(ReflectionClass::createFromName(User\Command\AddUserIdentity::class));
+
+        $addUserIdentityHandler = ReflectionClass::createFromName(User\Command\AddUserIdentityHandler::class);
+
+        $addUserIdentity = $addUserIdentity->addHandler(MessageHandler::fromReflectionMethod(
+            $addUserIdentityHandler->getMethod('__invoke')
+        ));
+
+        $msgFlow = $msgFlow->setMessage($addUserIdentity);
+
+        $msgFlow = $this->cut->onClassReflection($addUserIdentityHandler, $msgFlow);
+
+        $this->assertEquals([
+            User\Command\AddUserIdentityHandler::class.'::__invoke->'.User::class.'::addIdentity',
+            User::class.'::addIdentity->'.Identity::class.'::add',
         ], array_keys($msgFlow->eventRecorderInvokers()));
     }
 }

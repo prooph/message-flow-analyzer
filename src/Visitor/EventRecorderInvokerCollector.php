@@ -10,10 +10,13 @@
 
 namespace Prooph\MessageFlowAnalyzer\Visitor;
 
+use PhpParser\Node;
 use PhpParser\NodeTraverser;
+use PhpParser\NodeVisitorAbstract;
 use Prooph\MessageFlowAnalyzer\Helper\PhpParser\ScanHelper;
 use Prooph\MessageFlowAnalyzer\MessageFlow;
 use Roave\BetterReflection\Reflection\ReflectionClass;
+use Roave\BetterReflection\Reflection\ReflectionMethod;
 
 final class EventRecorderInvokerCollector implements ClassVisitor
 {
@@ -29,11 +32,22 @@ final class EventRecorderInvokerCollector implements ClassVisitor
 
         foreach ($eventRecorders as $eventRecorder) {
             $messageFlow = $messageFlow->setEventRecorderInvoker(
-                MessageFlow\EventRecorderInvoker::fromMessageHandlerAndEventRecorder(
+                MessageFlow\EventRecorderInvoker::fromInvokerAndEventRecorder(
                     $commandHandler,
                     $eventRecorder
                 )
             );
+
+            $builtEventRecorder = $this->checkIfEventRecorderMethodIsUsedAsFactory($eventRecorder);
+
+            if($builtEventRecorder) {
+                $messageFlow = $messageFlow->setEventRecorderInvoker(
+                    MessageFlow\EventRecorderInvoker::fromInvokerAndEventRecorder(
+                        $eventRecorder,
+                        $builtEventRecorder
+                    )
+                );
+            }
         }
 
         return $messageFlow;
@@ -54,5 +68,63 @@ final class EventRecorderInvokerCollector implements ClassVisitor
         }
 
         throw new \RuntimeException("No command handler found for handler identifier: " . $handler);
+    }
+
+    private function checkIfEventRecorderMethodIsUsedAsFactory(MessageFlow\EventRecorder $eventRecorder): ?MessageFlow\EventRecorder
+    {
+        $method = $eventRecorder->toFunctionLike();
+
+        if(!$method->hasReturnType()) {
+            return null;
+        }
+
+        $returnType = $method->getReturnType();
+
+        if($returnType->isBuiltin()) {
+            return null;
+        }
+
+        $reflectedReturnType = ReflectionClass::createFromName((string)$returnType);
+
+        if(!MessageFlow\EventRecorder::isEventRecorder($reflectedReturnType)) {
+            return null;
+        }
+
+        $nodeVisitor = new class($reflectedReturnType) extends NodeVisitorAbstract {
+            private $reflectedReturnType;
+            private $eventRecorder;
+            public function __construct(ReflectionClass $reflectedReturnType)
+            {
+                $this->reflectedReturnType = $reflectedReturnType;
+            }
+
+            public function leaveNode(Node $node)
+            {
+                if($node instanceof Node\Expr\StaticCall) {
+                    if($node->class instanceof Node\Name\FullyQualified
+                        && $this->reflectedReturnType->getName() === $node->class->toString()) {
+                        $reflectionClass = ReflectionClass::createFromName($node->class->toString());
+
+                        if(!MessageFlow\EventRecorder::isEventRecorder($reflectionClass)) {
+                            return;
+                        }
+
+                        $reflectionMethod = ReflectionMethod::createFromName($node->class->toString(), $node->name);
+                        $this->eventRecorder = MessageFlow\EventRecorder::fromReflectionMethod($reflectionMethod);
+                    }
+                }
+            }
+
+            public function getEventRecorder(): ?MessageFlow\EventRecorder
+            {
+                return $this->eventRecorder;
+            }
+        };
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($nodeVisitor);
+        $traverser->traverse($method->getBodyAst());
+
+        return $nodeVisitor->getEventRecorder();
     }
 }

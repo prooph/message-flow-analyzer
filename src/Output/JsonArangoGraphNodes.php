@@ -78,7 +78,7 @@ final class JsonArangoGraphNodes implements Formatter
 
         foreach ($messageFlow->eventRecorderInvokers() as $eventRecorderInvoker) {
             $edges[] = [
-                '_from' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->messageHandlerIdentifier()),
+                '_from' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier()),
                 '_to' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->eventRecorderIdentifier())
             ];
         }

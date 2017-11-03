@@ -22,6 +22,14 @@ final class Identity extends EventProducerAbstract
         $self = new self();
         //Note: this won't work if it would be executed but we want to test that non AggregateChanged events are tracked, too
         $self->recordThat(new IdentityAdded($identityId));
+        return $self;
+    }
+
+    public static function addForUser(string $identityId, string $userId): self
+    {
+        $self = new self();
+        $self->recordThat(new IdentityAdded($identityId, $userId));
+        return $self;
     }
 
     protected function aggregateId(): string
