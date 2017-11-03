@@ -10,6 +10,7 @@
 
 namespace Prooph\MessageFlowAnalyzer\Helper;
 
+use Prooph\MessageFlowAnalyzer\MessageFlow\MessageHandlingMethodAbstract;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 
 final class Util
@@ -38,5 +39,11 @@ final class Util
     public static function identifierToKey(string $identifier): string
     {
         return sha1($identifier);
+    }
+
+    public static function identifierWithoutMethod(string $identifier): string
+    {
+        $parts = explode(MessageHandlingMethodAbstract::ID_METHOD_DELIMITER, $identifier);
+        return array_shift($parts);
     }
 }

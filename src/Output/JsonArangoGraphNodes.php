@@ -40,8 +40,8 @@ final class JsonArangoGraphNodes implements Formatter
                 ];
 
                 $edges[] = [
-                    'from' => 'messages/'.$msgKey,
-                    'to' => 'handlers/'.$handlerKey
+                    '_from' => 'messages/'.$msgKey,
+                    '_to' => 'handlers/'.$handlerKey
                 ];
             }
 
@@ -55,8 +55,8 @@ final class JsonArangoGraphNodes implements Formatter
                 ];
 
                 $edges[] = [
-                    'from' => 'handlers/'.$producerKey,
-                    'to' => 'messages/'.$msgKey
+                    '_from' => 'handlers/'.$producerKey,
+                    '_to' => 'messages/'.$msgKey
                 ];
             }
 
@@ -64,22 +64,42 @@ final class JsonArangoGraphNodes implements Formatter
                 $recorderKey = Util::identifierToKey($recorder->identifier());
                 $handlers[$recorderKey] = [
                     '_key' => $recorderKey,
-                    'name' => $recorder->isClass()? Util::withoutNamespace($recorder->class()) : $recorder->function(),
+                    'name' => $recorder->isClass()? Util::withoutNamespace($recorder->class()).'::'.$recorder->function() : $recorder->function(),
                     'class' => $recorder->class(),
                     'function' => $recorder->function(),
                 ];
 
-                $edges[] = [
-                    'from' => 'handlers/'.$recorderKey,
-                    'to' => 'messages/'.$msgKey,
-                ];
+                if($recorder->isClass()) {
+                    $recorderClassKey = Util::identifierToKey(Util::identifierWithoutMethod($recorder->identifier()));
+                    
+                    $handlers[$recorderClassKey] = [
+                        '_key' => $recorderClassKey,
+                        'name' => Util::withoutNamespace($recorder->class()),
+                        'class' => $recorder->class(),
+                        'function' => null
+                    ];
+                    
+                    $edges[] = [
+                        '_from' => 'handlers/'.$recorderClassKey,
+                        '_to' => 'handlers/'.$recorderKey
+                    ];
+                    $edges[] = [
+                        '_from' => 'handlers/'.$recorderKey,
+                        '_to' => 'messages/'.$msgKey,
+                    ];
+                } else {
+                    $edges[] = [
+                        '_from' => 'handlers/'.$recorderKey,
+                        '_to' => 'messages/'.$msgKey,
+                    ];
+                }
             }
         }
 
         foreach ($messageFlow->eventRecorderInvokers() as $eventRecorderInvoker) {
             $edges[] = [
                 '_from' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier()),
-                '_to' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->eventRecorderIdentifier())
+                '_to' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->eventRecorderIdentifier()))
             ];
         }
 

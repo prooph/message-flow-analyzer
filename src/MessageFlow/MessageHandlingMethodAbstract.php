@@ -20,6 +20,7 @@ class MessageHandlingMethodAbstract
     const TYPE_CLASS = 'class';
     const TYPE_FUNCTION = 'function';
     const TYPE_CLOSURE = 'closure';
+    const ID_METHOD_DELIMITER = '::';
 
     const ALL_TYPES = [self::TYPE_CLASS, self::TYPE_FUNCTION, self::TYPE_CLOSURE];
 
@@ -81,7 +82,7 @@ class MessageHandlingMethodAbstract
     {
         switch ($this->type) {
             case self::TYPE_CLASS:
-                return $this->class() . '::' . $this->function();
+                return $this->class() . self::ID_METHOD_DELIMITER . $this->function();
             default:
                 return $this->filename() . '\\' . $this->function();
 
