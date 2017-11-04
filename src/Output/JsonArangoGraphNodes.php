@@ -20,6 +20,7 @@ final class JsonArangoGraphNodes implements Formatter
         $messages = [];
         $handlers = [];
         $edges = [];
+        $eventRecorderClasses = [];
 
         foreach ($messageFlow->messages() as $message) {
             $msgKey = Util::identifierToKey($message->name());
@@ -61,6 +62,10 @@ final class JsonArangoGraphNodes implements Formatter
             }
 
             foreach ($message->recorders() as $recorder) {
+                if($recorder->isClass()) {
+                    $eventRecorderClasses[$recorder->class()] = $recorder;
+                }
+
                 $recorderKey = Util::identifierToKey($recorder->identifier());
                 $handlers[$recorderKey] = [
                     '_key' => $recorderKey,
@@ -71,14 +76,14 @@ final class JsonArangoGraphNodes implements Formatter
 
                 if($recorder->isClass()) {
                     $recorderClassKey = Util::identifierToKey(Util::identifierWithoutMethod($recorder->identifier()));
-                    
+
                     $handlers[$recorderClassKey] = [
                         '_key' => $recorderClassKey,
                         'name' => Util::withoutNamespace($recorder->class()),
                         'class' => $recorder->class(),
                         'function' => null
                     ];
-                    
+
                     $edges[] = [
                         '_from' => 'handlers/'.$recorderClassKey,
                         '_to' => 'handlers/'.$recorderKey
@@ -96,11 +101,46 @@ final class JsonArangoGraphNodes implements Formatter
             }
         }
 
+        $isEventRecorderClass = function (string $identifier) use ($eventRecorderClasses): bool
+        {
+            return array_key_exists(Util::identifierWithoutMethod($identifier), $eventRecorderClasses);
+        };
+
+        $getEventRecorderFactory = function (string $identifer) use ($eventRecorderClasses): MessageFlow\EventRecorder {
+            $recorderClass = Util::identifierWithoutMethod($identifer);
+            $factoryMethod = str_replace($recorderClass.MessageFlow\MessageHandlingMethodAbstract::ID_METHOD_DELIMITER, '', $identifer);
+
+            $orgEventRecorder = $eventRecorderClasses[$recorderClass]->toArray();
+            $orgEventRecorder['function'] = $factoryMethod;
+            return MessageFlow\EventRecorder::fromArray($orgEventRecorder);
+        };
+
         foreach ($messageFlow->eventRecorderInvokers() as $eventRecorderInvoker) {
-            $edges[] = [
-                '_form' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->invokerIdentifier())),
-                '_to' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier())
-            ];
+            //Special case: EventRecorder method used as factory for another event recorder
+            //We want to add following flow to the graph in that case:
+            //
+            //1.) EventRecorderFactory -> EventRecorderFactory::method -- EventRecorderFactory::method is not available as handler, we need to add it
+            //2.) EventRecorderFactory::method -> BuiltEventRecorder -- This edge needs to be added to and is the definition stored in $messageFlow
+            //3.) BuiltEventRecorder -> BuiltEventRecorder::method -- already added as an edge as event recorder
+            if($isEventRecorderClass($eventRecorderInvoker->invokerIdentifier())) {
+                //Add handler for 1.), see above
+                $eventRecorderFactory = $getEventRecorderFactory($eventRecorderInvoker->invokerIdentifier());
+
+                $handlers[Util::identifierToKey($eventRecorderFactory->identifier())] = [
+                    '_key' => Util::identifierToKey($eventRecorderFactory->identifier()),
+                    'name' => Util::withoutNamespace($eventRecorderFactory->class()).'::'.$eventRecorderFactory->function(),
+                    'class' => $eventRecorderFactory->class(),
+                    'function' => $eventRecorderFactory->function(),
+                ];
+
+                //Add 1. edge for factory case (see above)
+                $edges[] = [
+                    '_from' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->invokerIdentifier())),
+                    '_to' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier())
+                ];
+            }
+
+            //Add 2. egde for factory case (see above), or normal message handler invokes event recorder case
             $edges[] = [
                 '_from' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier()),
                 '_to' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->eventRecorderIdentifier()))
