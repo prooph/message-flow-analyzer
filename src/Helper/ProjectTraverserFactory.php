@@ -16,6 +16,7 @@ use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
 use Prooph\MessageFlowAnalyzer\Output\Formatter;
 use Prooph\MessageFlowAnalyzer\Output\JsonArangoGraphNodes;
+use Prooph\MessageFlowAnalyzer\Output\JsonCytoscapeElements;
 use Prooph\MessageFlowAnalyzer\Output\JsonPrettyPrint;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
 use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderCollector;
@@ -46,6 +47,7 @@ final class ProjectTraverserFactory
     public static $outputFormatterAliases = [
         'JsonPrettyPrint' => JsonPrettyPrint::class,
         'JsonArangoGraphNodes' => JsonArangoGraphNodes::class,
+        'JsonCytoscapeElements' => JsonCytoscapeElements::class,
     ];
 
     public static function buildTraverserFromConfig(array $config): ProjectTraverser
