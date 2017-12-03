@@ -21,52 +21,6 @@ final class JsonCytoscapeElements implements Formatter
         $edges = [];
         $eventRecorderClasses = [];
 
-        $cmdProducerXPos = 0;
-        $cmdXPos = 200;
-        $cmdHandlerXPos = 500;
-        $eventRecorderXPos = 750;
-        $eventXPos = 1000;
-        $eventHandlerXPos = 1250;
-        $yStep = 200;
-
-        $currentYpos = 0;
-        $cmdYPos = [];
-        $cmdHandlerYPos = [];
-        $eventRecorderYPos = [];
-        $eventYPos = [];
-
-        foreach ($messageFlow->messages() as $message) {
-            if($message->type() === 'command') {
-                $cmdYPos[Util::identifierToKey($message->name())] = $currentYpos;
-                foreach ($message->handlers() as $handler) {
-                    $handlerKey = Util::identifierToKey($handler->identifier());
-                    $cmdHandlerYPos[$handlerKey] = $currentYpos;
-                }
-                $currentYpos += $yStep;
-            }
-        }
-
-        foreach ($messageFlow->eventRecorderInvokers() as $eventRecorderInvoker) {
-            $eventRecorderInvokerKey = Util::identifierToKey($eventRecorderInvoker->invokerIdentifier());
-            $eventRecorderKey = Util::identifierToKey($eventRecorderInvoker->eventRecorderIdentifier());
-
-            if(array_key_exists($eventRecorderInvokerKey, $cmdHandlerYPos)) {
-                $eventRecorderYPos[$eventRecorderKey] = $cmdHandlerYPos[$eventRecorderInvokerKey];
-            }
-        }
-
-        foreach ($messageFlow->messages() as $message) {
-            if($message->type() === 'event') {
-                foreach ($message->recorders() as $eventRecorder) {
-                    $eventRecorderKey = Util::identifierToKey($eventRecorder->identifier());
-                    if(array_key_exists($eventRecorderKey, $eventRecorderYPos)) {
-                        $eventYPos[Util::identifierToKey($message->name())] = $eventRecorderYPos[$eventRecorderKey];
-                    }
-                }
-            }
-        }
-
-
         foreach ($messageFlow->messages() as $message) {
             $msgKey = Util::identifierToKey($message->name());
             $nodes[] = [
@@ -77,10 +31,6 @@ final class JsonCytoscapeElements implements Formatter
                     'class' => $message->class()
                 ],
                 'classes' => "message ".$message->type(),
-                'position' => [
-                    'x' => $message->type() === 'command'? $cmdXPos : $eventXPos,
-                    'y' => $message->type() === 'command'? ($cmdYPos[$msgKey] ?? 0) : ($eventYPos[$msgKey] ?? 0),
-                ]
 
             ];
 
@@ -94,10 +44,6 @@ final class JsonCytoscapeElements implements Formatter
                         'function' => $handler->function(),
                     ],
                     'classes' => $message->type().' handler',
-                    'position' => [
-                        'x' => $message->type() === 'command'? $cmdHandlerXPos : $eventHandlerXPos,
-                        'y' => $message->type() === 'command'? ($cmdHandlerYPos[$handlerKey] ?? 0) : ($eventYPos[$msgKey] ?? 0),
-                    ]
                 ];
 
                 $edges[] = [
@@ -119,10 +65,6 @@ final class JsonCytoscapeElements implements Formatter
                         'function' => $producer->function(),
                     ],
                     'classes' => $message->type().' producer',
-                    'position' => [
-                        'x' => $cmdProducerXPos,
-                        'y' => $message->type() === 'command'? ($cmdYPos[$msgKey] ?? 0) : ($eventYPos[$msgKey] ?? 0),
-                    ]
                 ];
 
                 $edges[] = [
@@ -166,10 +108,6 @@ final class JsonCytoscapeElements implements Formatter
                 $nodes[] = [
                     'data' => $data,
                     'classes' => $message->type().' recorder',
-                    'position' => [
-                        'x' => $eventRecorderXPos,
-                        'y' => $eventYPos[$msgKey] ?? 0,
-                    ],
                 ];
 
                 $edges[] = [
@@ -219,10 +157,6 @@ final class JsonCytoscapeElements implements Formatter
                         'parent' => Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderFactory->identifier())),
                     ],
                     'classes' => 'event factory',
-                    'position' => [
-                        'x' => $eventRecorderXPos,
-                        'y' => $eventRecorderYPos[$eventRecorderKey] ?? 0,
-                    ]
                 ];
             }
 
