@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -21,18 +23,19 @@ final class Util
             return $trait->getName() === $traitName;
         });
 
-        if(count($filteredTrait)) {
+        if (count($filteredTrait)) {
             return true;
         }
 
         $parentClass = $reflectionClass->getParentClass();
 
-        return $parentClass? self::usesTrait($traitName, $parentClass) : false;
+        return $parentClass ? self::usesTrait($traitName, $parentClass) : false;
     }
 
     public static function withoutNamespace(string $class): string
     {
         $parts = explode('\\', $class);
+
         return array_pop($parts);
     }
 
@@ -44,6 +47,7 @@ final class Util
     public static function identifierWithoutMethod(string $identifier): string
     {
         $parts = explode(MessageHandlingMethodAbstract::ID_METHOD_DELIMITER, $identifier);
+
         return array_shift($parts);
     }
 }

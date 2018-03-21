@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -10,10 +12,10 @@
 
 namespace Prooph\MessageFlowAnalyzer;
 
+use Prooph\Common\Messaging\Message as ProophMsg;
 use Prooph\Common\Messaging\MessageDataAssertion;
 use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorderInvoker;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
-use Prooph\Common\Messaging\Message as ProophMsg;
 
 final class MessageFlow
 {
@@ -69,11 +71,11 @@ final class MessageFlow
 
     private function __construct(string $project, string $rootDir, array $flow)
     {
-        if(mb_strlen($project) === 0) {
+        if (mb_strlen($project) === 0) {
             throw new \InvalidArgumentException('Project name must not be empty.');
         }
 
-        if(!is_dir($rootDir)) {
+        if (! is_dir($rootDir)) {
             throw new \InvalidArgumentException('Root dir is not a directory. Got ' . $rootDir);
         }
         $this->project = $project;
@@ -106,7 +108,7 @@ final class MessageFlow
 
     public function getMessage(string $name, Message $efault = null): ?Message
     {
-        if(!array_key_exists($name, $this->messages())) {
+        if (! array_key_exists($name, $this->messages())) {
             return $efault;
         }
 
@@ -133,6 +135,7 @@ final class MessageFlow
     {
         $cp = clone $this;
         $cp->eventRecorderInvokers[$invoker->identifier()] = $invoker;
+
         return $cp;
     }
 
@@ -143,7 +146,7 @@ final class MessageFlow
 
     public function getAttribute(string $name, $default = null)
     {
-        if(array_key_exists($name, $this->attributes)) {
+        if (array_key_exists($name, $this->attributes)) {
             return $this->attributes[$name];
         }
 
@@ -155,17 +158,18 @@ final class MessageFlow
         try {
             MessageDataAssertion::assertPayload(['value' => $value]);
         } catch (\Throwable $error) {
-            throw new \InvalidArgumentException("Attribute value should be of type and contain only scalar, NULL or array. Got " . $error->getMessage());
+            throw new \InvalidArgumentException('Attribute value should be of type and contain only scalar, NULL or array. Got ' . $error->getMessage());
         }
 
         $cp = clone $this;
         $cp->attributes[$name] = $value;
+
         return $cp;
     }
 
     public function addMessage(Message $msg): self
     {
-        if($this->knowsMessage($msg->name())) {
+        if ($this->knowsMessage($msg->name())) {
             throw new \RuntimeException('Message is already known. Got ' . $msg->name());
         }
 
@@ -178,7 +182,7 @@ final class MessageFlow
         $cp->messages[$msg->name()] = $msg;
 
         //Reset internal cmd handler cache
-        if($msg->type() === ProophMsg::TYPE_COMMAND) {
+        if ($msg->type() === ProophMsg::TYPE_COMMAND) {
             $cp->commandHandlers = null;
         }
 
@@ -192,16 +196,16 @@ final class MessageFlow
      */
     public function getKnownCommandHandlers(): array
     {
-        if(null === $this->commandHandlers) {
+        if (null === $this->commandHandlers) {
             $this->commandHandlers = [];
 
             foreach ($this->messages() as $message) {
-                if($message->type() !== ProophMsg::TYPE_COMMAND) {
+                if ($message->type() !== ProophMsg::TYPE_COMMAND) {
                     continue;
                 }
 
                 foreach ($message->handlers() as $handler) {
-                    $this->commandHandlers[] = $handler->isClass()? $handler->class() : $handler->function();
+                    $this->commandHandlers[] = $handler->isClass() ? $handler->class() : $handler->function();
                 }
             }
         }
@@ -214,13 +218,13 @@ final class MessageFlow
         return [
             'project' => $this->project,
             'rootDir' => $this->rootDir,
-            'flow' => $this->flowToArray()
+            'flow' => $this->flowToArray(),
         ];
     }
 
     public function equals($other): bool
     {
-        if(!$other instanceof self) {
+        if (! $other instanceof self) {
             return false;
         }
 
@@ -236,14 +240,14 @@ final class MessageFlow
     {
         return [
             'messages' => array_map(function ($msg): Message {
-                if($msg instanceof Message) {
+                if ($msg instanceof Message) {
                     return $msg;
                 }
 
                 return Message::fromArray($msg);
             }, $flow['messages'] ?? []),
             'eventRecorderInvokers' => array_map(function ($invoker): EventRecorderInvoker {
-                if($invoker instanceof EventRecorderInvoker) {
+                if ($invoker instanceof EventRecorderInvoker) {
                     return $invoker;
                 }
 
@@ -256,8 +260,12 @@ final class MessageFlow
     private function flowToArray(): array
     {
         return [
-            'messages' => array_map(function (Message $msg): array {return $msg->toArray();}, $this->messages),
-            'eventRecorderInvokers' => array_map(function (EventRecorderInvoker $invoker): array {return $invoker->toArray();}, $this->eventRecorderInvokers),
+            'messages' => array_map(function (Message $msg): array {
+                return $msg->toArray();
+            }, $this->messages),
+            'eventRecorderInvokers' => array_map(function (EventRecorderInvoker $invoker): array {
+                return $invoker->toArray();
+            }, $this->eventRecorderInvokers),
             'attributes' => $this->attributes,
         ];
     }

@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -52,25 +54,25 @@ final class ProjectTraverserFactory
 
     public static function buildTraverserFromConfig(array $config): ProjectTraverser
     {
-        if(!array_key_exists('name', $config)) {
-            throw new \InvalidArgumentException("Missing project name in configuration");
+        if (! array_key_exists('name', $config)) {
+            throw new \InvalidArgumentException('Missing project name in configuration');
         }
 
         $traverser = new ProjectTraverser($config['name']);
 
         foreach ($config['fileInfoFilters'] ?? [] as $filterClass) {
             $filterClass = self::$filterAliases[$filterClass] ?? $filterClass;
-            $traverser->addFileInfoFilter(new $filterClass);
+            $traverser->addFileInfoFilter(new $filterClass());
         }
 
         foreach ($config['classVisitors'] ?? [] as $classVisitorClass) {
             $classVisitorClass = self::$classVisitorAliases[$classVisitorClass] ?? $classVisitorClass;
-            $traverser->addClassVisitor(new $classVisitorClass);
+            $traverser->addClassVisitor(new $classVisitorClass());
         }
 
         foreach ($config['fileInfoVisitors'] ?? [] as $fileInfoVisitorClass) {
             $fileInfoVisitorClass = self::$fileInfoVisitorAliases[$fileInfoVisitorClass] ?? $fileInfoVisitorClass;
-            $traverser->addFileInfoVisitor(new $fileInfoVisitorClass);
+            $traverser->addFileInfoVisitor(new $fileInfoVisitorClass());
         }
 
         return $traverser;
@@ -80,6 +82,6 @@ final class ProjectTraverserFactory
     {
         $nameOrClass = self::$outputFormatterAliases[$nameOrClass] ?? $nameOrClass;
 
-        return new $nameOrClass;
+        return new $nameOrClass();
     }
 }

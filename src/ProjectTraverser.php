@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -43,9 +45,12 @@ final class ProjectTraverser
     public function __construct(string $project, array $fileInfoFilters = [], array $classVisitors = [], array $fileInfoVisitors = [])
     {
         //Use PHPs runtime type validation
-        array_walk($fileInfoFilters, function (FileInfoFilter $filter) {});
-        array_walk($classVisitors, function (ClassVisitor $visitor) {});
-        array_walk($fileInfoVisitors, function (FileInfoVisitor $visitor) {});
+        array_walk($fileInfoFilters, function (FileInfoFilter $filter) {
+        });
+        array_walk($classVisitors, function (ClassVisitor $visitor) {
+        });
+        array_walk($fileInfoVisitors, function (FileInfoVisitor $visitor) {
+        });
 
         $this->project = $project;
         $this->classVisitors = $classVisitors;
@@ -74,7 +79,7 @@ final class ProjectTraverser
         $directory = new \RecursiveDirectoryIterator($msgFlow->rootDir());
         $filter = new \RecursiveCallbackFilterIterator($directory, function ($current) use ($msgFlow) {
             foreach ($this->fileInfoFilters as $filter) {
-                if(!$filter->accept($current, $msgFlow->rootDir())) {
+                if (! $filter->accept($current, $msgFlow->rootDir())) {
                     return false;
                 }
             }
@@ -85,7 +90,7 @@ final class ProjectTraverser
 
         foreach ($iterator as $file) {
             /** @var $file \SplFileInfo */
-            if($file->isFile()) {
+            if ($file->isFile()) {
                 $msgFlow = $this->handleFile($file, $msgFlow);
             }
         }
@@ -99,7 +104,7 @@ final class ProjectTraverser
             $msgFlow = $visitor->onFileInfo($fileInfo, $msgFlow);
         }
 
-        if(!$fileInfo->getExtension() === 'php') {
+        if (! $fileInfo->getExtension() === 'php') {
             return $msgFlow;
         }
 

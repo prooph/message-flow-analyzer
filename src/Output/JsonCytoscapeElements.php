@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -28,9 +30,9 @@ final class JsonCytoscapeElements implements Formatter
                     'id' => $msgKey,
                     'type' => $message->type(),
                     'name' => Util::withoutNamespace($message->name()),
-                    'class' => $message->class()
+                    'class' => $message->class(),
                 ],
-                'classes' => "message ".$message->type(),
+                'classes' => 'message '.$message->type(),
 
             ];
 
@@ -39,7 +41,7 @@ final class JsonCytoscapeElements implements Formatter
                 $nodes[] = [
                     'data' => [
                         'id' => $handlerKey,
-                        'name' => $handler->isClass()? Util::withoutNamespace($handler->class()) : $handler->function(),
+                        'name' => $handler->isClass() ? Util::withoutNamespace($handler->class()) : $handler->function(),
                         'class' => $handler->class(),
                         'function' => $handler->function(),
                     ],
@@ -50,7 +52,7 @@ final class JsonCytoscapeElements implements Formatter
                     'data' => [
                         'id' => $msgKey.'_'.$handlerKey,
                         'source' => $msgKey,
-                        'target' => $handlerKey
+                        'target' => $handlerKey,
                     ],
                 ];
             }
@@ -60,7 +62,7 @@ final class JsonCytoscapeElements implements Formatter
                 $nodes[] = [
                     'data' => [
                         'id' => $producerKey,
-                        'name' => $producer->isClass()? Util::withoutNamespace($producer->class()) : $producer->function(),
+                        'name' => $producer->isClass() ? Util::withoutNamespace($producer->class()) : $producer->function(),
                         'class' => $producer->class(),
                         'function' => $producer->function(),
                     ],
@@ -72,20 +74,20 @@ final class JsonCytoscapeElements implements Formatter
                         'id' => $producerKey.'_'.$msgKey,
                         'source' => $producerKey,
                         'target' => $msgKey,
-                    ]
+                    ],
                 ];
             }
 
             foreach ($message->recorders() as $recorder) {
                 $parent = null;
-                if($recorder->isClass()) {
+                if ($recorder->isClass()) {
                     $parent = Util::identifierToKey(Util::identifierWithoutMethod($recorder->identifier()));
                     $nodes[] = [
                         'data' => [
                             'id' => $parent,
                             'name' => Util::withoutNamespace($recorder->class()),
                             'class' => $recorder->class(),
-                            'function' => null
+                            'function' => null,
                         ],
                         'classes' => $message->type().' parent',
                     ];
@@ -96,12 +98,12 @@ final class JsonCytoscapeElements implements Formatter
 
                 $data = [
                     'id' => $recorderKey,
-                    'name' => $recorder->isClass()? Util::withoutNamespace($recorder->class()).'::'.$recorder->function() : $recorder->function(),
+                    'name' => $recorder->isClass() ? Util::withoutNamespace($recorder->class()).'::'.$recorder->function() : $recorder->function(),
                     'class' => $recorder->class(),
                     'function' => $recorder->function(),
                 ];
 
-                if($parent) {
+                if ($parent) {
                     $data['parent'] = $parent;
                 }
 
@@ -115,13 +117,12 @@ final class JsonCytoscapeElements implements Formatter
                         'id' => $recorderKey.'_'.$msgKey,
                         'source' => $recorderKey,
                         'target' => $msgKey,
-                    ]
+                    ],
                 ];
             }
         }
 
-        $isEventRecorderClass = function (string $identifier) use ($eventRecorderClasses): bool
-        {
+        $isEventRecorderClass = function (string $identifier) use ($eventRecorderClasses): bool {
             return array_key_exists(Util::identifierWithoutMethod($identifier), $eventRecorderClasses);
         };
 
@@ -131,6 +132,7 @@ final class JsonCytoscapeElements implements Formatter
 
             $orgEventRecorder = $eventRecorderClasses[$recorderClass]->toArray();
             $orgEventRecorder['function'] = $factoryMethod;
+
             return MessageFlow\EventRecorder::fromArray($orgEventRecorder);
         };
 
@@ -143,7 +145,7 @@ final class JsonCytoscapeElements implements Formatter
             //
             //1.) EventRecorderFactory::method -> BuiltEventRecorder::method -- EventRecorderFactory::method is not available as handler, we need to add it
             //2.)
-            if($isEventRecorderClass($eventRecorderInvoker->invokerIdentifier())) {
+            if ($isEventRecorderClass($eventRecorderInvoker->invokerIdentifier())) {
                 //Add handler for 1.), see above
                 $eventRecorderFactory = $getEventRecorderFactory($eventRecorderInvoker->invokerIdentifier());
 
@@ -171,7 +173,7 @@ final class JsonCytoscapeElements implements Formatter
 
         return json_encode([
             'nodes' => $nodes,
-            'edges' => $edges
+            'edges' => $edges,
         ], JSON_PRETTY_PRINT);
     }
 }

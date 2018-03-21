@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -66,13 +68,13 @@ final class EventRecorderInvoker
     {
         return [
             'invokerIdentifier' => $this->invokerIdentifier,
-            'eventRecorderIdentifier' => $this->eventRecorderIdentifier
+            'eventRecorderIdentifier' => $this->eventRecorderIdentifier,
         ];
     }
 
     public function equals($other): bool
     {
-        if(!$other instanceof self) {
+        if (! $other instanceof self) {
             return false;
         }
 

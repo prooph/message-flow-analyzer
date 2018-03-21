@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -11,10 +13,10 @@
 namespace Prooph\MessageFlowAnalyzer\Helper;
 
 use PhpParser\NodeTraverser;
-use Prooph\MessageFlowAnalyzer\MessageFlow;
-use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Prooph\MessageFlowAnalyzer\Helper\PhpParser\MessageScanner;
 use Prooph\MessageFlowAnalyzer\Helper\PhpParser\MessageScanningNodeTraverser;
+use Prooph\MessageFlowAnalyzer\MessageFlow;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
 
@@ -55,12 +57,13 @@ trait MessageProducingMethodScanner
         }
 
         $this->getTraverser()->traverse($bodyAst);
+
         return $this->getTraverser()->messageScanner()->popFoundMessages();
     }
 
     private function getTraverser(): MessageScanningNodeTraverser
     {
-        if(null === $this->nodeTraverser) {
+        if (null === $this->nodeTraverser) {
             $this->nodeTraverser = new MessageScanningNodeTraverser(new NodeTraverser(), new MessageScanner());
         }
 

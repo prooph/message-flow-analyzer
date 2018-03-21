@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -28,21 +30,21 @@ final class JsonArangoGraphNodes implements Formatter
                 '_key' => $msgKey,
                 'type' => $message->type(),
                 'name' => Util::withoutNamespace($message->name()),
-                'class' => $message->class()
+                'class' => $message->class(),
             ];
 
             foreach ($message->handlers() as $handler) {
                 $handlerKey = Util::identifierToKey($handler->identifier());
                 $handlers[$handlerKey] = [
                     '_key' => $handlerKey,
-                    'name' => $handler->isClass()? Util::withoutNamespace($handler->class()) : $handler->function(),
+                    'name' => $handler->isClass() ? Util::withoutNamespace($handler->class()) : $handler->function(),
                     'class' => $handler->class(),
                     'function' => $handler->function(),
                 ];
 
                 $edges[] = [
                     '_from' => 'messages/'.$msgKey,
-                    '_to' => 'handlers/'.$handlerKey
+                    '_to' => 'handlers/'.$handlerKey,
                 ];
             }
 
@@ -50,43 +52,43 @@ final class JsonArangoGraphNodes implements Formatter
                 $producerKey = Util::identifierToKey($producer->identifier());
                 $handlers[$producerKey] = [
                     '_key' => $producerKey,
-                    'name' => $producer->isClass()? Util::withoutNamespace($producer->class()) : $producer->function(),
+                    'name' => $producer->isClass() ? Util::withoutNamespace($producer->class()) : $producer->function(),
                     'class' => $producer->class(),
                     'function' => $producer->function(),
                 ];
 
                 $edges[] = [
                     '_from' => 'handlers/'.$producerKey,
-                    '_to' => 'messages/'.$msgKey
+                    '_to' => 'messages/'.$msgKey,
                 ];
             }
 
             foreach ($message->recorders() as $recorder) {
-                if($recorder->isClass()) {
+                if ($recorder->isClass()) {
                     $eventRecorderClasses[$recorder->class()] = $recorder;
                 }
 
                 $recorderKey = Util::identifierToKey($recorder->identifier());
                 $handlers[$recorderKey] = [
                     '_key' => $recorderKey,
-                    'name' => $recorder->isClass()? Util::withoutNamespace($recorder->class()).'::'.$recorder->function() : $recorder->function(),
+                    'name' => $recorder->isClass() ? Util::withoutNamespace($recorder->class()).'::'.$recorder->function() : $recorder->function(),
                     'class' => $recorder->class(),
                     'function' => $recorder->function(),
                 ];
 
-                if($recorder->isClass()) {
+                if ($recorder->isClass()) {
                     $recorderClassKey = Util::identifierToKey(Util::identifierWithoutMethod($recorder->identifier()));
 
                     $handlers[$recorderClassKey] = [
                         '_key' => $recorderClassKey,
                         'name' => Util::withoutNamespace($recorder->class()),
                         'class' => $recorder->class(),
-                        'function' => null
+                        'function' => null,
                     ];
 
                     $edges[] = [
                         '_from' => 'handlers/'.$recorderClassKey,
-                        '_to' => 'handlers/'.$recorderKey
+                        '_to' => 'handlers/'.$recorderKey,
                     ];
                     $edges[] = [
                         '_from' => 'handlers/'.$recorderKey,
@@ -101,8 +103,7 @@ final class JsonArangoGraphNodes implements Formatter
             }
         }
 
-        $isEventRecorderClass = function (string $identifier) use ($eventRecorderClasses): bool
-        {
+        $isEventRecorderClass = function (string $identifier) use ($eventRecorderClasses): bool {
             return array_key_exists(Util::identifierWithoutMethod($identifier), $eventRecorderClasses);
         };
 
@@ -112,6 +113,7 @@ final class JsonArangoGraphNodes implements Formatter
 
             $orgEventRecorder = $eventRecorderClasses[$recorderClass]->toArray();
             $orgEventRecorder['function'] = $factoryMethod;
+
             return MessageFlow\EventRecorder::fromArray($orgEventRecorder);
         };
 
@@ -122,7 +124,7 @@ final class JsonArangoGraphNodes implements Formatter
             //1.) EventRecorderFactory -> EventRecorderFactory::method -- EventRecorderFactory::method is not available as handler, we need to add it
             //2.) EventRecorderFactory::method -> BuiltEventRecorder -- This edge needs to be added to and is the definition stored in $messageFlow
             //3.) BuiltEventRecorder -> BuiltEventRecorder::method -- already added as an edge as event recorder
-            if($isEventRecorderClass($eventRecorderInvoker->invokerIdentifier())) {
+            if ($isEventRecorderClass($eventRecorderInvoker->invokerIdentifier())) {
                 //Add handler for 1.), see above
                 $eventRecorderFactory = $getEventRecorderFactory($eventRecorderInvoker->invokerIdentifier());
 
@@ -136,21 +138,21 @@ final class JsonArangoGraphNodes implements Formatter
                 //Add 1. edge for factory case (see above)
                 $edges[] = [
                     '_from' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->invokerIdentifier())),
-                    '_to' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier())
+                    '_to' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier()),
                 ];
             }
 
             //Add 2. egde for factory case (see above), or normal message handler invokes event recorder case
             $edges[] = [
                 '_from' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier()),
-                '_to' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->eventRecorderIdentifier()))
+                '_to' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->eventRecorderIdentifier())),
             ];
         }
 
         return json_encode([
             'messages' => array_values($messages),
             'handlers' => array_values($handlers),
-            'edges' => $edges
+            'edges' => $edges,
         ], JSON_PRETTY_PRINT);
     }
 }

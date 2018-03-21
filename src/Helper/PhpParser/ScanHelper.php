@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -27,7 +29,7 @@ class ScanHelper
      */
     public static function findInvokedEventRecorders(MessageHandler $messageHandler): array
     {
-        if(!$messageHandler->isClass()) {
+        if (! $messageHandler->isClass()) {
             return [];
         }
 
@@ -46,6 +48,7 @@ class ScanHelper
              * @var EventRecorder[]
              */
             private $eventRecorders = [];
+
             public function __construct($eventRecorderVariables)
             {
                 $this->eventRecorderVariables = $eventRecorderVariables;
@@ -53,11 +56,11 @@ class ScanHelper
 
             public function leaveNode(Node $node)
             {
-                if($node instanceof Node\Expr\StaticCall) {
-                    if($node->class instanceof Node\Name\FullyQualified) {
+                if ($node instanceof Node\Expr\StaticCall) {
+                    if ($node->class instanceof Node\Name\FullyQualified) {
                         $reflectionClass = ReflectionClass::createFromName($node->class->toString());
 
-                        if(!EventRecorder::isEventRecorder($reflectionClass)) {
+                        if (! EventRecorder::isEventRecorder($reflectionClass)) {
                             return;
                         }
 
@@ -66,15 +69,15 @@ class ScanHelper
                     }
                 }
 
-                if(!$node instanceof Node\Expr\MethodCall) {
+                if (! $node instanceof Node\Expr\MethodCall) {
                     return;
                 }
 
-                if(!$node->var instanceof Node\Expr\Variable) {
+                if (! $node->var instanceof Node\Expr\Variable) {
                     return;
                 }
 
-                if(!array_key_exists($node->var->name, $this->eventRecorderVariables)) {
+                if (! array_key_exists($node->var->name, $this->eventRecorderVariables)) {
                     return;
                 }
 
@@ -104,7 +107,7 @@ class ScanHelper
      */
     public static function findEventRecorderRepositoryProperties(ReflectionClass $reflectionClass): array
     {
-        if(!$reflectionClass->hasMethod('__construct')) {
+        if (! $reflectionClass->hasMethod('__construct')) {
             return [];
         }
 
@@ -114,10 +117,10 @@ class ScanHelper
         $properties = [];
 
         foreach ($constructor->getParameters() as $parameter) {
-            if($eventRecorder = self::isEventRecorderRepositoryParameter($parameter)) {
+            if ($eventRecorder = self::isEventRecorderRepositoryParameter($parameter)) {
                 $propertyName = self::getPropertyNameForParameter($constructor, $parameter->getName());
 
-                if($propertyName) {
+                if ($propertyName) {
                     $properties[$propertyName] = $eventRecorder;
                 }
             }
@@ -138,6 +141,7 @@ class ScanHelper
         $nodeVisitor = new class($eventRecorderRepositoryProperties) extends NodeVisitorAbstract {
             private $eventRecorderRepositoryProperties;
             private $eventRecorderVariables = [];
+
             public function __construct(array $eventRecorderRepositoryProperties)
             {
                 $this->eventRecorderRepositoryProperties = $eventRecorderRepositoryProperties;
@@ -145,23 +149,23 @@ class ScanHelper
 
             public function leaveNode(Node $node)
             {
-                if($node instanceof Node\Expr\Assign) {
-                    if(!$node->expr instanceof Node\Expr\MethodCall) {
+                if ($node instanceof Node\Expr\Assign) {
+                    if (! $node->expr instanceof Node\Expr\MethodCall) {
                         return;
                     }
 
-                    if(!$node->expr->var instanceof Node\Expr\PropertyFetch) {
+                    if (! $node->expr->var instanceof Node\Expr\PropertyFetch) {
                         return;
                     }
 
                     /** @var Node\Expr\PropertyFetch $propertyFetch */
                     $propertyFetch = $node->expr->var;
 
-                    if(!$propertyFetch->var instanceof Node\Expr\Variable || $propertyFetch->var->name !== "this") {
+                    if (! $propertyFetch->var instanceof Node\Expr\Variable || $propertyFetch->var->name !== 'this') {
                         return;
                     }
 
-                    if(array_key_exists($propertyFetch->name, $this->eventRecorderRepositoryProperties)) {
+                    if (array_key_exists($propertyFetch->name, $this->eventRecorderRepositoryProperties)) {
                         $eventRecorder = $this->eventRecorderRepositoryProperties[$propertyFetch->name];
                         $this->eventRecorderVariables[$node->var->name] = $eventRecorder;
                     }
@@ -183,25 +187,25 @@ class ScanHelper
 
     private static function isEventRecorderRepositoryParameter(ReflectionParameter $parameter, bool $inspectChildParameters = true): ?ReflectionClass
     {
-        if(!$parameter->hasType()) {
+        if (! $parameter->hasType()) {
             return null;
         }
 
-        if($parameter->getType()->isBuiltin()) {
+        if ($parameter->getType()->isBuiltin()) {
             return null;
         }
 
-        $paramReflectionClass = ReflectionClass::createFromName((string)$parameter->getType());
+        $paramReflectionClass = ReflectionClass::createFromName((string) $parameter->getType());
 
-        if(EventRecorder::isEventRecorder($paramReflectionClass)) {
+        if (EventRecorder::isEventRecorder($paramReflectionClass)) {
             return $paramReflectionClass;
         }
 
         //Check if we are dealing with a repository and can find an event recorder in repository methods like add or save
-        if($inspectChildParameters) {
+        if ($inspectChildParameters) {
             foreach ($paramReflectionClass->getMethods() as $method) {
                 foreach ($method->getParameters() as $parameter) {
-                    if($recorder = self::isEventRecorderRepositoryParameter($parameter, false)) { //Do not scan further childs
+                    if ($recorder = self::isEventRecorderRepositoryParameter($parameter, false)) { //Do not scan further childs
                         return $recorder;
                     }
                 }
@@ -224,27 +228,27 @@ class ScanHelper
 
             public function leaveNode(Node $node)
             {
-                if($node instanceof Node\Expr\Assign) {
-                    if(null !== $this->propertyName) {
+                if ($node instanceof Node\Expr\Assign) {
+                    if (null !== $this->propertyName) {
                         return;
                     }
 
-                    if(!$node->var instanceof Node\Expr\PropertyFetch) {
+                    if (! $node->var instanceof Node\Expr\PropertyFetch) {
                         return;
                     }
 
                     /** @var Node\Expr\PropertyFetch $propertyFetch */
                     $propertyFetch = $node->var;
 
-                    if(!$propertyFetch->var instanceof Node\Expr\Variable || $propertyFetch->var->name !== "this") {
+                    if (! $propertyFetch->var instanceof Node\Expr\Variable || $propertyFetch->var->name !== 'this') {
                         return;
                     }
 
-                    if(!$node->expr instanceof Node\Expr\Variable) {
+                    if (! $node->expr instanceof Node\Expr\Variable) {
                         return;
                     }
 
-                    if($node->expr->name === $this->parameterName) {
+                    if ($node->expr->name === $this->parameterName) {
                         $this->propertyName = $propertyFetch->name;
                     }
                 }
