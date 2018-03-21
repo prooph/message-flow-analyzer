@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -51,7 +53,7 @@ EOT
     {
         $rootDir = $input->getArgument('dir');
 
-        if(null === $rootDir) {
+        if (null === $rootDir) {
             $rootDir = getcwd();
         }
 
@@ -61,7 +63,7 @@ EOT
 
         $configPath = $input->getOption('config');
 
-        if(!file_exists($configPath)) {
+        if (! file_exists($configPath)) {
             $output->writeln('<error>Config file '.$configPath.' not found.</error>');
             exit(1);
         }
@@ -70,7 +72,7 @@ EOT
 
         $error = json_last_error();
 
-        if($error !== JSON_ERROR_NONE) {
+        if ($error !== JSON_ERROR_NONE) {
             $output->writeln('<error>Could not parse config file. Invalid JSON: '.json_last_error_msg().'</error>');
             exit($error);
         }

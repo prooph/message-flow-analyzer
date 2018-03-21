@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -10,8 +12,8 @@
 
 namespace Prooph\MessageFlowAnalyzer\MessageFlow;
 
-use Prooph\Common\Messaging\MessageDataAssertion;
 use Prooph\Common\Messaging\Message as ProophMsg;
+use Prooph\Common\Messaging\MessageDataAssertion;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 
 final class Message
@@ -55,7 +57,7 @@ final class Message
 
     public static function isRealMessage(ReflectionClass $proophMessage): bool
     {
-        if($proophMessage->isAnonymous() || $proophMessage->isAbstract() || $proophMessage->isInterface()) {
+        if ($proophMessage->isAnonymous() || $proophMessage->isAbstract() || $proophMessage->isInterface()) {
             return false;
         }
 
@@ -64,8 +66,8 @@ final class Message
 
     public static function fromReflectionClass(ReflectionClass $proophMessage): self
     {
-        if(!$proophMessage->implementsInterface(ProophMsg::class)) {
-            throw new \InvalidArgumentException("Reflected message does not implement ".ProophMsg::class.". Got ".$proophMessage->getName());
+        if (! $proophMessage->implementsInterface(ProophMsg::class)) {
+            throw new \InvalidArgumentException('Reflected message does not implement '.ProophMsg::class.'. Got '.$proophMessage->getName());
         }
 
         $phpReflectionhMessage = new \ReflectionClass($proophMessage->getName());
@@ -100,24 +102,24 @@ final class Message
 
     public static function fromArray(array $data): self
     {
-        $handlers = array_map(function($handler): MessageHandler {
-            if($handler instanceof MessageHandler) {
+        $handlers = array_map(function ($handler): MessageHandler {
+            if ($handler instanceof MessageHandler) {
                 return $handler;
             }
 
             return MessageHandler::fromArray($handler);
         }, $data['handlers'] ?? []);
 
-        $producers = array_map(function($producer): MessageProducer {
-            if($producer instanceof MessageProducer) {
+        $producers = array_map(function ($producer): MessageProducer {
+            if ($producer instanceof MessageProducer) {
                 return $producer;
             }
 
             return MessageProducer::fromArray($producer);
         }, $data['producers'] ?? []);
 
-        $recorders = array_map(function($recorder): EventRecorder {
-            if($recorder instanceof EventRecorder) {
+        $recorders = array_map(function ($recorder): EventRecorder {
+            if ($recorder instanceof EventRecorder) {
                 return $recorder;
             }
 
@@ -139,21 +141,24 @@ final class Message
     {
         MessageDataAssertion::assertMessageName($name);
 
-        if(!in_array($type, self::MESSAGE_TYPES)) {
-            throw new \InvalidArgumentException("Message type must be one of [".implode(',', self::MESSAGE_TYPES)."]. Got $type");
+        if (! in_array($type, self::MESSAGE_TYPES)) {
+            throw new \InvalidArgumentException('Message type must be one of ['.implode(',', self::MESSAGE_TYPES)."]. Got $type");
         }
 
-        if(!class_exists($class)) {
+        if (! class_exists($class)) {
             throw new \InvalidArgumentException("Unknown message class. Got $class");
         }
 
-        if(!file_exists($filename)) {
+        if (! file_exists($filename)) {
             throw new \InvalidArgumentException("Message class file not found. Got $filename");
         }
 
-        array_walk($handlers, function (MessageHandler $handler) {});
-        array_walk($producers, function (MessageProducer $producer) {});
-        array_walk($recorders, function (EventRecorder $recorder) {});
+        array_walk($handlers, function (MessageHandler $handler) {
+        });
+        array_walk($producers, function (MessageProducer $producer) {
+        });
+        array_walk($recorders, function (EventRecorder $recorder) {
+        });
 
         $this->name = $name;
         $this->type = $type;
@@ -224,6 +229,7 @@ final class Message
     {
         $cp = clone $this;
         $cp->handlers[$messageHandler->identifier()] = $messageHandler;
+
         return $cp;
     }
 
@@ -231,6 +237,7 @@ final class Message
     {
         $cp = clone $this;
         $cp->producers[$messageProducer->identifier()] = $messageProducer;
+
         return $cp;
     }
 
@@ -238,6 +245,7 @@ final class Message
     {
         $cp = clone $this;
         $cp->recorders[$eventRecorder->identifier()] = $eventRecorder;
+
         return $cp;
     }
 
@@ -248,15 +256,21 @@ final class Message
             'type' => $this->type,
             'class' => $this->class,
             'filename' => $this->filename,
-            'handlers' => array_map(function(MessageHandler $handler) {return $handler->toArray();}, $this->handlers),
-            'producers' => array_map(function(MessageProducer $producer) {return $producer->toArray();}, $this->producers),
-            'recorders' => array_map(function (EventRecorder $recorder) {return $recorder->toArray();}, $this->recorders),
+            'handlers' => array_map(function (MessageHandler $handler) {
+                return $handler->toArray();
+            }, $this->handlers),
+            'producers' => array_map(function (MessageProducer $producer) {
+                return $producer->toArray();
+            }, $this->producers),
+            'recorders' => array_map(function (EventRecorder $recorder) {
+                return $recorder->toArray();
+            }, $this->recorders),
         ];
     }
 
     public function equals($other): bool
     {
-        if(!$other instanceof self) {
+        if (! $other instanceof self) {
             return false;
         }
 

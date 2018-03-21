@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -15,7 +17,6 @@ use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Identity
 
 class ProophIdentityRepository implements IdentityRepository
 {
-
     public function get(string $identityId): Identity
     {
         // TODO: Implement get() method.

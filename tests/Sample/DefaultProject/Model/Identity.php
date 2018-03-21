@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -22,6 +24,7 @@ final class Identity extends EventProducerAbstract
         $self = new self();
         //Note: this won't work if it would be executed but we want to test that non AggregateChanged events are tracked, too
         $self->recordThat(new IdentityAdded($identityId));
+
         return $self;
     }
 
@@ -29,6 +32,7 @@ final class Identity extends EventProducerAbstract
     {
         $self = new self();
         $self->recordThat(new IdentityAdded($identityId, $userId));
+
         return $self;
     }
 

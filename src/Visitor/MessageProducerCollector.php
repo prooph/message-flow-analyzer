@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -10,9 +12,9 @@
 
 namespace Prooph\MessageFlowAnalyzer\Visitor;
 
+use Prooph\Common\Messaging\Message as ProophMsg;
 use Prooph\MessageFlowAnalyzer\Helper\MessageProducingMethodScanner;
 use Prooph\MessageFlowAnalyzer\MessageFlow;
-use Prooph\Common\Messaging\Message as ProophMsg;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
 
@@ -22,11 +24,11 @@ class MessageProducerCollector implements ClassVisitor
 
     public function onClassReflection(ReflectionClass $reflectionClass, MessageFlow $messageFlow): MessageFlow
     {
-        if($reflectionClass->implementsInterface(ProophMsg::class)) {
+        if ($reflectionClass->implementsInterface(ProophMsg::class)) {
             return $messageFlow;
         }
 
-        if(MessageFlow\EventRecorder::isEventRecorder($reflectionClass)) {
+        if (MessageFlow\EventRecorder::isEventRecorder($reflectionClass)) {
             return $messageFlow;
         }
 

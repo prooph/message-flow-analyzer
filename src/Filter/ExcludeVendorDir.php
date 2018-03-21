@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -14,11 +16,11 @@ final class ExcludeVendorDir implements FileInfoFilter
 {
     public function accept(\SplFileInfo $fileInfo, string $rootDir): bool
     {
-        if(!$fileInfo->isDir()) {
+        if (! $fileInfo->isDir()) {
             return true;
         }
 
-        if($fileInfo->getPathname() === $rootDir . DIRECTORY_SEPARATOR . 'vendor') {
+        if ($fileInfo->getPathname() === $rootDir . DIRECTORY_SEPARATOR . 'vendor') {
             return false;
         }
 

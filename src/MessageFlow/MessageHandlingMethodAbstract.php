@@ -1,4 +1,6 @@
 <?php
+
+declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
  * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
@@ -66,10 +68,10 @@ class MessageHandlingMethodAbstract
 
     private function __construct(string $type, string $filename, string $function, string $class = null)
     {
-        if(!in_array($type, self::ALL_TYPES)) {
+        if (! in_array($type, self::ALL_TYPES)) {
             throw new \InvalidArgumentException('Message handler should be one of [' . implode(',', self::ALL_TYPES).']. Got ' . $type);
         }
-        if(!file_exists($filename)) {
+        if (! file_exists($filename)) {
             throw new \InvalidArgumentException('File of message handler could not be found. Got ' . $filename);
         }
         $this->type = $type;
@@ -116,11 +118,11 @@ class MessageHandlingMethodAbstract
 
     public function toFunctionLike(): ReflectionFunctionAbstract
     {
-        if(!$this->isClass()) {
+        if (! $this->isClass()) {
             return ReflectionFunction::createFromName($this->function());
-        } else {
-            return ReflectionClass::createFromName($this->class())->getMethod($this->function());
         }
+
+        return ReflectionClass::createFromName($this->class())->getMethod($this->function());
     }
 
     public function toArray(): array
@@ -129,13 +131,13 @@ class MessageHandlingMethodAbstract
             'type' => $this->type,
             'filename' => $this->filename,
             'function' => $this->function,
-            'class' => $this->class
+            'class' => $this->class,
         ];
     }
 
     public function equals($other): bool
     {
-        if(!$other instanceof self) {
+        if (! $other instanceof self) {
             return false;
         }
 
