@@ -236,12 +236,12 @@ final class MessageFlow
         return [
             'project' => $this->project,
             'rootDir' => $this->rootDir,
-            'nodes' => array_map(function (Node $node): array {
+            'nodes' => array_values(array_map(function (Node $node): array {
                 return $node->toArray();
-            }, $this->nodes),
-            'edges' => array_map(function (Edge $edge): array {
+            }, $this->nodes)),
+            'edges' => array_values(array_map(function (Edge $edge): array {
                 return $edge->toArray();
-            }, $this->edges),
+            }, $this->edges)),
         ];
     }
 
