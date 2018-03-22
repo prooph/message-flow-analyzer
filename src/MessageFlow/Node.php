@@ -115,6 +115,17 @@ class Node
     private $parent = null;
 
     /**
+     * Optional parent color
+     *
+     * If this node has a parent with a custom color (default is: #E9F2F7)
+     * you have to set the parent color for the child node, too.
+     * Parent color is used as icon background color (default is #FFFFFF).
+     *
+     * @var string|null
+     */
+    private $parentColor = null;
+
+    /**
      * Additional tags added as class names in the UI
      *
      * @var string[]
@@ -228,7 +239,7 @@ class Node
             $aggregateMethod->filename(),
             null,
             $aggregateMethod->class()
-        ))->withTag('parent')->withColor('#e9f2f7');
+        ))->withTag('parent')->withColor('#E9F2F7');
     }
 
     /**
@@ -256,7 +267,9 @@ class Node
             $eventRecorder->function(),
             null,
             Util::codeIdentifierToNodeId($eventRecorder->class())
-        ))->withTag('event')->withTag('recorder')->withIcon('fa-chevron-circle-right')->withColor('#EECA51');
+        ))->withTag('event')->withTag('recorder')
+            ->withIcon('fa-chevron-circle-right')->withColor('#EECA51')
+            ->withParentColor('#E9F2F7');
     }
 
     /**
@@ -284,7 +297,9 @@ class Node
             $eventRecorderInvoker->function(),
             null,
             Util::codeIdentifierToNodeId($eventRecorderInvoker->class())
-        ))->withTag('event')->withTag('factory')->withIcon('fa-industry')->withColor('#EECA51');
+        ))->withTag('event')->withTag('factory')
+            ->withIcon('fa-industry')->withColor('#EECA51')
+            ->withParentColor('#E9F2F7');
     }
 
     public static function asEventListener(MessageHandler $messageHandler): self
@@ -394,6 +409,7 @@ class Node
             $tags,
             $nodeData['data']['icon'] ?? null,
             $nodeData['data']['color'] ?? null,
+            $nodeData['data']['parentColor'] ?? null,
             $nodeData['data']['schema'] ?? null
         );
     }
@@ -411,6 +427,7 @@ class Node
         array $tags = [],
         string $icon = null,
         string $color = null,
+        string $parentColor = null,
         array $schema = null
     ) {
         if ($id === '') {
@@ -442,6 +459,7 @@ class Node
         $this->parent = $parent;
         $this->icon = $icon;
         $this->color = $color;
+        $this->parentColor = $parentColor;
         $this->schema = $schema;
 
         foreach ($tags as $tag) {
@@ -464,6 +482,7 @@ class Node
                 'parent' => $this->parent,
                 'icon' => $this->icon,
                 'color' => $this->color,
+                'parentColor' => $this->parentColor,
                 'schema' => $this->schema,
             ],
             'classes' => implode(' ', $this->withTag($this->type)->tags()),
@@ -564,6 +583,11 @@ class Node
     public function color(): ?string
     {
         return $this->color;
+    }
+
+    public function parentColor(): ?string
+    {
+        return $this->parentColor;
     }
 
     /**
@@ -716,6 +740,22 @@ class Node
     {
         $cp = clone $this;
         $cp->color = null;
+
+        return $cp;
+    }
+
+    public function withParentColor(string $parentColor): self
+    {
+        $cp = clone $this;
+        $cp->parentColor = $parentColor;
+
+        return $cp;
+    }
+
+    public function withoutParentColor(): self
+    {
+        $cp = clone $this;
+        $cp->parentColor = null;
 
         return $cp;
     }
