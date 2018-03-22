@@ -256,7 +256,7 @@ class Node
             $eventRecorder->function(),
             null,
             Util::codeIdentifierToNodeId($eventRecorder->class())
-        ))->withTag('event')->withTag('recorder')->withIcon('fa-shield-check')->withColor('#EECA51');
+        ))->withTag('event')->withTag('recorder')->withIcon('fa-chevron-circle-right')->withColor('#EECA51');
     }
 
     /**
