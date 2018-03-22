@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,7 +15,10 @@ namespace Prooph\MessageFlowAnalyzer\Helper\PhpParser;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
+use Prooph\Common\Messaging\Message as ProophMsg;
+use Prooph\MessageFlowAnalyzer\MessageFlow;
 use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorder;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Prooph\MessageFlowAnalyzer\MessageFlow\MessageHandler;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
@@ -183,6 +186,101 @@ class ScanHelper
         $traverser->traverse($method->getBodyAst());
 
         return $nodeVisitor->getEventRecorderVariables();
+    }
+
+    public static function checkIfEventRecorderMethodIsUsedAsFactory(EventRecorder $eventRecorder): ?EventRecorder
+    {
+        $method = $eventRecorder->toFunctionLike();
+
+        if (! $method->hasReturnType()) {
+            return null;
+        }
+
+        $returnType = $method->getReturnType();
+
+        if ($returnType->isBuiltin()) {
+            return null;
+        }
+
+        $reflectedReturnType = ReflectionClass::createFromName((string) $returnType);
+
+        if (! EventRecorder::isEventRecorder($reflectedReturnType)) {
+            return null;
+        }
+
+        $nodeVisitor = new class($reflectedReturnType) extends NodeVisitorAbstract {
+            private $reflectedReturnType;
+            private $eventRecorder;
+
+            public function __construct(ReflectionClass $reflectedReturnType)
+            {
+                $this->reflectedReturnType = $reflectedReturnType;
+            }
+
+            public function leaveNode(Node $node)
+            {
+                if ($node instanceof Node\Expr\StaticCall) {
+                    if ($node->class instanceof Node\Name\FullyQualified
+                        && $this->reflectedReturnType->getName() === $node->class->toString()) {
+                        $reflectionClass = ReflectionClass::createFromName($node->class->toString());
+
+                        if (! EventRecorder::isEventRecorder($reflectionClass)) {
+                            return;
+                        }
+
+                        $reflectionMethod = ReflectionMethod::createFromName($node->class->toString(), $node->name);
+                        $this->eventRecorder = EventRecorder::fromReflectionMethod($reflectionMethod);
+                    }
+                }
+            }
+
+            public function getEventRecorder(): ?EventRecorder
+            {
+                return $this->eventRecorder;
+            }
+        };
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($nodeVisitor);
+        $traverser->traverse($method->getBodyAst());
+
+        return $nodeVisitor->getEventRecorder();
+    }
+
+    public static function checkIfMethodHandlesMessage(MessageFlow $messageFlow, ReflectionMethod $method): ?Message
+    {
+        $parameters = $method->getParameters();
+
+        //command handler, event listener -> func($msg): void {}, query handler/finder -> func($msg, $deferred): void {}
+        if (count($parameters) === 0 || count($parameters) > 2) {
+            return null;
+        }
+
+        $parameter = $method->getParameters()[0];
+
+        if (! $parameter->hasType()) {
+            return null;
+        }
+
+        $parameterType = $parameter->getType();
+
+        if ($parameterType->isBuiltin()) {
+            return null;
+        }
+
+        $reflectionClass = ReflectionClass::createFromName((string) $parameterType);
+
+        if (! $reflectionClass->implementsInterface(ProophMsg::class)) {
+            return null;
+        }
+
+        if (! MessageFlow\Message::isRealMessage($reflectionClass)) {
+            return null;
+        }
+
+        $message = MessageFlow\Message::fromReflectionClass($reflectionClass);
+
+        return $messageFlow->getMessage($message->name(), $message);
     }
 
     private static function isEventRecorderRepositoryParameter(ReflectionParameter $parameter, bool $inspectChildParameters = true): ?ReflectionClass

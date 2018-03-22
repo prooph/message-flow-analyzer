@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,7 +12,7 @@ declare(strict_types=1);
 
 namespace ProophTest\MessageFlowAnalyzer\Visitor;
 
-use Prooph\MessageFlowAnalyzer\MessageFlow\MessageProducer;
+use Prooph\MessageFlowAnalyzer\Helper\Util;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
 use ProophTest\MessageFlowAnalyzer\BaseTestCase;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Controller\UserController;
@@ -45,13 +45,8 @@ class MessageProducerCollectorTest extends BaseTestCase
 
         $msgFlow = $this->cut->onClassReflection($identityAdder, $msgFlow);
 
-        $this->assertTrue($msgFlow->knowsMessage(AddIdentity::class));
-
-        $addIdentity = $msgFlow->getMessage(AddIdentity::class);
-
-        $producer = $addIdentity->producers()[IdentityAdder::class.'::onUserRegistered'] ?? null;
-
-        $this->assertInstanceOf(MessageProducer::class, $producer);
+        $this->assertTrue($msgFlow->knowsNodeWithId(Util::codeIdentifierToNodeId(AddIdentity::class)));
+        $this->assertTrue($msgFlow->knowsNodeWithId(Util::codeIdentifierToNodeId(IdentityAdder::class.'::onUserRegistered')));
     }
 
     /**
@@ -66,16 +61,11 @@ class MessageProducerCollectorTest extends BaseTestCase
         $msgFlow = $this->cut->onClassReflection($userController, $msgFlow);
 
         //Uses self as return type of named constructor
-        $this->assertTrue($msgFlow->knowsMessage(RegisterUser::class));
+        $this->assertTrue($msgFlow->knowsNodeWithId(Util::codeIdentifierToNodeId(RegisterUser::class)));
         //Uses message class as return type of named constructor
-        $this->assertTrue($msgFlow->knowsMessage(ChangeUsername::class));
+        $this->assertTrue($msgFlow->knowsNodeWithId(Util::codeIdentifierToNodeId(ChangeUsername::class)));
 
-        $registerUser = $msgFlow->getMessage(RegisterUser::class);
-        $producer = $registerUser->producers()[UserController::class.'::postAction'] ?? null;
-        $this->assertInstanceOf(MessageProducer::class, $producer);
-
-        $changeUsername = $msgFlow->getMessage(ChangeUsername::class);
-        $producer = $changeUsername->producers()[UserController::class.'::patchAction'] ?? null;
-        $this->assertInstanceOf(MessageProducer::class, $producer);
+        $this->assertTrue($msgFlow->knowsNodeWithId(Util::codeIdentifierToNodeId(UserController::class.'::postAction')));
+        $this->assertTrue($msgFlow->knowsNodeWithId(Util::codeIdentifierToNodeId(UserController::class.'::patchAction')));
     }
 }

@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -35,9 +35,6 @@ class MessageTest extends BaseTestCase
             'type' => $registerUser->messageType(),
             'class' => RegisterUser::class,
             'filename' => realpath(__DIR__ . '/../Sample/DefaultProject/Model/User/Command/RegisterUser.php'),
-            'handlers' => [],
-            'producers' => [],
-            'recorders' => [],
         ], $message->toArray());
     }
 }

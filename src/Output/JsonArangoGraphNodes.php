@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -25,7 +25,7 @@ final class JsonArangoGraphNodes implements Formatter
         $eventRecorderClasses = [];
 
         foreach ($messageFlow->messages() as $message) {
-            $msgKey = Util::identifierToKey($message->name());
+            $msgKey = Util::codeIdentifierToNodeId($message->name());
             $messages[$msgKey] = [
                 '_key' => $msgKey,
                 'type' => $message->type(),
@@ -34,7 +34,7 @@ final class JsonArangoGraphNodes implements Formatter
             ];
 
             foreach ($message->handlers() as $handler) {
-                $handlerKey = Util::identifierToKey($handler->identifier());
+                $handlerKey = Util::codeIdentifierToNodeId($handler->identifier());
                 $handlers[$handlerKey] = [
                     '_key' => $handlerKey,
                     'name' => $handler->isClass() ? Util::withoutNamespace($handler->class()) : $handler->function(),
@@ -49,7 +49,7 @@ final class JsonArangoGraphNodes implements Formatter
             }
 
             foreach ($message->producers() as $producer) {
-                $producerKey = Util::identifierToKey($producer->identifier());
+                $producerKey = Util::codeIdentifierToNodeId($producer->identifier());
                 $handlers[$producerKey] = [
                     '_key' => $producerKey,
                     'name' => $producer->isClass() ? Util::withoutNamespace($producer->class()) : $producer->function(),
@@ -68,7 +68,7 @@ final class JsonArangoGraphNodes implements Formatter
                     $eventRecorderClasses[$recorder->class()] = $recorder;
                 }
 
-                $recorderKey = Util::identifierToKey($recorder->identifier());
+                $recorderKey = Util::codeIdentifierToNodeId($recorder->identifier());
                 $handlers[$recorderKey] = [
                     '_key' => $recorderKey,
                     'name' => $recorder->isClass() ? Util::withoutNamespace($recorder->class()).'::'.$recorder->function() : $recorder->function(),
@@ -77,7 +77,7 @@ final class JsonArangoGraphNodes implements Formatter
                 ];
 
                 if ($recorder->isClass()) {
-                    $recorderClassKey = Util::identifierToKey(Util::identifierWithoutMethod($recorder->identifier()));
+                    $recorderClassKey = Util::codeIdentifierToNodeId(Util::codeIdentifierWithoutMethod($recorder->identifier()));
 
                     $handlers[$recorderClassKey] = [
                         '_key' => $recorderClassKey,
@@ -104,11 +104,11 @@ final class JsonArangoGraphNodes implements Formatter
         }
 
         $isEventRecorderClass = function (string $identifier) use ($eventRecorderClasses): bool {
-            return array_key_exists(Util::identifierWithoutMethod($identifier), $eventRecorderClasses);
+            return array_key_exists(Util::codeIdentifierWithoutMethod($identifier), $eventRecorderClasses);
         };
 
         $getEventRecorderFactory = function (string $identifer) use ($eventRecorderClasses): MessageFlow\EventRecorder {
-            $recorderClass = Util::identifierWithoutMethod($identifer);
+            $recorderClass = Util::codeIdentifierWithoutMethod($identifer);
             $factoryMethod = str_replace($recorderClass.MessageFlow\MessageHandlingMethodAbstract::ID_METHOD_DELIMITER, '', $identifer);
 
             $orgEventRecorder = $eventRecorderClasses[$recorderClass]->toArray();
@@ -128,8 +128,8 @@ final class JsonArangoGraphNodes implements Formatter
                 //Add handler for 1.), see above
                 $eventRecorderFactory = $getEventRecorderFactory($eventRecorderInvoker->invokerIdentifier());
 
-                $handlers[Util::identifierToKey($eventRecorderFactory->identifier())] = [
-                    '_key' => Util::identifierToKey($eventRecorderFactory->identifier()),
+                $handlers[Util::codeIdentifierToNodeId($eventRecorderFactory->identifier())] = [
+                    '_key' => Util::codeIdentifierToNodeId($eventRecorderFactory->identifier()),
                     'name' => Util::withoutNamespace($eventRecorderFactory->class()).'::'.$eventRecorderFactory->function(),
                     'class' => $eventRecorderFactory->class(),
                     'function' => $eventRecorderFactory->function(),
@@ -137,15 +137,15 @@ final class JsonArangoGraphNodes implements Formatter
 
                 //Add 1. edge for factory case (see above)
                 $edges[] = [
-                    '_from' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->invokerIdentifier())),
-                    '_to' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier()),
+                    '_from' => 'handlers/'.Util::codeIdentifierToNodeId(Util::codeIdentifierWithoutMethod($eventRecorderInvoker->invokerIdentifier())),
+                    '_to' => 'handlers/'.Util::codeIdentifierToNodeId($eventRecorderInvoker->invokerIdentifier()),
                 ];
             }
 
             //Add 2. egde for factory case (see above), or normal message handler invokes event recorder case
             $edges[] = [
-                '_from' => 'handlers/'.Util::identifierToKey($eventRecorderInvoker->invokerIdentifier()),
-                '_to' => 'handlers/'.Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderInvoker->eventRecorderIdentifier())),
+                '_from' => 'handlers/'.Util::codeIdentifierToNodeId($eventRecorderInvoker->invokerIdentifier()),
+                '_to' => 'handlers/'.Util::codeIdentifierToNodeId(Util::codeIdentifierWithoutMethod($eventRecorderInvoker->eventRecorderIdentifier())),
             ];
         }
 

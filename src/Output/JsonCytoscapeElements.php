@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -24,7 +24,7 @@ final class JsonCytoscapeElements implements Formatter
         $eventRecorderClasses = [];
 
         foreach ($messageFlow->messages() as $message) {
-            $msgKey = Util::identifierToKey($message->name());
+            $msgKey = Util::codeIdentifierToNodeId($message->name());
             $nodes[] = [
                 'data' => [
                     'id' => $msgKey,
@@ -33,11 +33,10 @@ final class JsonCytoscapeElements implements Formatter
                     'class' => $message->class(),
                 ],
                 'classes' => 'message '.$message->type(),
-
             ];
 
             foreach ($message->handlers() as $handler) {
-                $handlerKey = Util::identifierToKey($handler->identifier());
+                $handlerKey = Util::codeIdentifierToNodeId($handler->identifier());
                 $nodes[] = [
                     'data' => [
                         'id' => $handlerKey,
@@ -58,7 +57,7 @@ final class JsonCytoscapeElements implements Formatter
             }
 
             foreach ($message->producers() as $producer) {
-                $producerKey = Util::identifierToKey($producer->identifier());
+                $producerKey = Util::codeIdentifierToNodeId($producer->identifier());
                 $nodes[] = [
                     'data' => [
                         'id' => $producerKey,
@@ -81,7 +80,7 @@ final class JsonCytoscapeElements implements Formatter
             foreach ($message->recorders() as $recorder) {
                 $parent = null;
                 if ($recorder->isClass()) {
-                    $parent = Util::identifierToKey(Util::identifierWithoutMethod($recorder->identifier()));
+                    $parent = Util::codeIdentifierToNodeId(Util::codeIdentifierWithoutMethod($recorder->identifier()));
                     $nodes[] = [
                         'data' => [
                             'id' => $parent,
@@ -94,7 +93,7 @@ final class JsonCytoscapeElements implements Formatter
                     $eventRecorderClasses[$recorder->class()] = $recorder;
                 }
 
-                $recorderKey = Util::identifierToKey($recorder->identifier());
+                $recorderKey = Util::codeIdentifierToNodeId($recorder->identifier());
 
                 $data = [
                     'id' => $recorderKey,
@@ -123,11 +122,11 @@ final class JsonCytoscapeElements implements Formatter
         }
 
         $isEventRecorderClass = function (string $identifier) use ($eventRecorderClasses): bool {
-            return array_key_exists(Util::identifierWithoutMethod($identifier), $eventRecorderClasses);
+            return array_key_exists(Util::codeIdentifierWithoutMethod($identifier), $eventRecorderClasses);
         };
 
         $getEventRecorderFactory = function (string $identifer) use ($eventRecorderClasses): MessageFlow\EventRecorder {
-            $recorderClass = Util::identifierWithoutMethod($identifer);
+            $recorderClass = Util::codeIdentifierWithoutMethod($identifer);
             $factoryMethod = str_replace($recorderClass.MessageFlow\MessageHandlingMethodAbstract::ID_METHOD_DELIMITER, '', $identifer);
 
             $orgEventRecorder = $eventRecorderClasses[$recorderClass]->toArray();
@@ -137,8 +136,8 @@ final class JsonCytoscapeElements implements Formatter
         };
 
         foreach ($messageFlow->eventRecorderInvokers() as $eventRecorderInvoker) {
-            $eventRecorderInvokerKey = Util::identifierToKey($eventRecorderInvoker->invokerIdentifier());
-            $eventRecorderKey = Util::identifierToKey($eventRecorderInvoker->eventRecorderIdentifier());
+            $eventRecorderInvokerKey = Util::codeIdentifierToNodeId($eventRecorderInvoker->invokerIdentifier());
+            $eventRecorderKey = Util::codeIdentifierToNodeId($eventRecorderInvoker->eventRecorderIdentifier());
 
             //Special case: EventRecorder method used as factory for another event recorder
             //We want to add following flow to the graph in that case:
@@ -149,14 +148,14 @@ final class JsonCytoscapeElements implements Formatter
                 //Add handler for 1.), see above
                 $eventRecorderFactory = $getEventRecorderFactory($eventRecorderInvoker->invokerIdentifier());
 
-                $eventRecorderFactoryKey = Util::identifierToKey($eventRecorderFactory->identifier());
+                $eventRecorderFactoryKey = Util::codeIdentifierToNodeId($eventRecorderFactory->identifier());
                 $nodes[] = [
                     'data' => [
                         'id' => $eventRecorderFactoryKey,
                         'name' => Util::withoutNamespace($eventRecorderFactory->class()).'::'.$eventRecorderFactory->function(),
                         'class' => $eventRecorderFactory->class(),
                         'function' => $eventRecorderFactory->function(),
-                        'parent' => Util::identifierToKey(Util::identifierWithoutMethod($eventRecorderFactory->identifier())),
+                        'parent' => Util::codeIdentifierToNodeId(Util::codeIdentifierWithoutMethod($eventRecorderFactory->identifier())),
                     ],
                     'classes' => 'event factory',
                 ];

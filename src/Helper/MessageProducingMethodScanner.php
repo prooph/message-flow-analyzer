@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -28,16 +28,21 @@ trait MessageProducingMethodScanner
     private $nodeTraverser;
 
     private function checkMessageProduction(
+        MessageFlow $msgFlow,
         ReflectionClass $reflectionClass,
-        callable $addMethodToMessageCb,
-        MessageFlow $msgFlow): MessageFlow
-    {
+        callable $onMessageProducingMethodCb,
+        callable $onNonMessageProducingMethodCb = null
+    ): MessageFlow {
         foreach ($reflectionClass->getMethods() as $method) {
             $messages = $this->checkMethodProducesMessages($method);
-            foreach ($messages as $message) {
-                $message = $msgFlow->getMessage($message->name(), $message);
-                $message = $addMethodToMessageCb($message, $method);
-                $msgFlow = $msgFlow->setMessage($message);
+
+            if (count($messages)) {
+                foreach ($messages as $message) {
+                    $message = $msgFlow->getMessage($message->name(), $message);
+                    $msgFlow = $onMessageProducingMethodCb($msgFlow, $message, $method);
+                }
+            } elseif ($onNonMessageProducingMethodCb) {
+                $msgFlow = $onNonMessageProducingMethodCb($msgFlow, $method);
             }
         }
 

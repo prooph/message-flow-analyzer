@@ -10,7 +10,6 @@
     "MessageCollector",
     "MessageHandlerCollector",
     "MessageProducerCollector",
-    "EventRecorderCollector",
-    "EventRecorderInvokerCollector"
+    "AggregateMethodCollector"
   ]
 }

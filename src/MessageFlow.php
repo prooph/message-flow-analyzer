@@ -1,10 +1,11 @@
 <?php
 
 declare(strict_types=1);
+
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -13,9 +14,11 @@ declare(strict_types=1);
 namespace Prooph\MessageFlowAnalyzer;
 
 use Prooph\Common\Messaging\Message as ProophMsg;
-use Prooph\Common\Messaging\MessageDataAssertion;
-use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorderInvoker;
+use Prooph\MessageFlowAnalyzer\Helper\Util;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Edge;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Node;
+use Prooph\MessageFlowAnalyzer\MessageFlow\NodeFactory;
 
 final class MessageFlow
 {
@@ -30,34 +33,27 @@ final class MessageFlow
     private $rootDir;
 
     /**
-     * @var Message[]
+     * @var Node[]
      */
-    private $messages;
+    private $nodes = [];
 
     /**
-     * @var EventRecorderInvoker[]
+     * @var Edge[]
      */
-    private $eventRecorderInvokers;
+    private $edges = [];
 
     /**
-     * @var array
-     */
-    private $attributes;
-
-    /**
-     * Internal cache which is reset when a new command message is set
+     * Internal command handler cache
      *
-     * @var string[]
+     * Is reset when a new command is added
+     *
+     * @var array
      */
     private $commandHandlers;
 
     public static function newFlow(string $project, string $rootDir): self
     {
-        return new self($project, $rootDir, [
-            'messages' => [],
-            'eventRecorderInvokers' => [],
-            'attributes' => [],
-        ]);
+        return new self($project, $rootDir);
     }
 
     public static function fromArray(array $flowData): self
@@ -65,11 +61,12 @@ final class MessageFlow
         return new self(
             $flowData['project'] ?? '',
             $flowData['rootDir'] ?? '',
-            self::flowFromArray($flowData['flow'] ?? [])
+            $flowData['nodes'] ?? [],
+            $flowData['edges'] ?? []
         );
     }
 
-    private function __construct(string $project, string $rootDir, array $flow)
+    private function __construct(string $project, string $rootDir, array $nodes = [], array $edges = [])
     {
         if (mb_strlen($project) === 0) {
             throw new \InvalidArgumentException('Project name must not be empty.');
@@ -80,9 +77,8 @@ final class MessageFlow
         }
         $this->project = $project;
         $this->rootDir = $rootDir;
-        $this->messages = $flow['messages'] ?? [];
-        $this->eventRecorderInvokers = $flow['eventRecorderInvokers'] ?? [];
-        $this->attributes = $flow['attributes'] ?? [];
+        $this->nodes = $nodes;
+        $this->edges = $edges;
     }
 
     /**
@@ -101,18 +97,35 @@ final class MessageFlow
         return $this->rootDir;
     }
 
-    public function knowsMessage(string $messageName): bool
+    /**
+     * @return Node[] indexed by node id
+     */
+    public function nodes(): array
     {
-        return array_key_exists($messageName, $this->messages);
+        return $this->nodes;
     }
 
-    public function getMessage(string $name, Message $efault = null): ?Message
+    /**
+     * @return Edge[] indexed by edge id
+     */
+    public function edges(): array
     {
-        if (! array_key_exists($name, $this->messages())) {
-            return $efault;
+        return $this->edges;
+    }
+
+    public function knowsMessage(Message $message): bool
+    {
+        return array_key_exists(Util::codeIdentifierToNodeId($message->name()), $this->nodes);
+    }
+
+    public function getMessage(string $name, Message $default = null): ?Message
+    {
+        $msgId = Util::codeIdentifierToNodeId($name);
+        if (! array_key_exists($msgId, $this->nodes)) {
+            return $default;
         }
 
-        return $this->messages[$name];
+        return Message::fromNode($this->nodes[$msgId]);
     }
 
     /**
@@ -120,56 +133,16 @@ final class MessageFlow
      */
     public function messages(): array
     {
-        return $this->messages;
-    }
-
-    /**
-     * @return EventRecorderInvoker[]
-     */
-    public function eventRecorderInvokers(): array
-    {
-        return $this->eventRecorderInvokers;
-    }
-
-    public function setEventRecorderInvoker(EventRecorderInvoker $invoker): self
-    {
-        $cp = clone $this;
-        $cp->eventRecorderInvokers[$invoker->identifier()] = $invoker;
-
-        return $cp;
-    }
-
-    public function attributes(): array
-    {
-        return $this->attributes;
-    }
-
-    public function getAttribute(string $name, $default = null)
-    {
-        if (array_key_exists($name, $this->attributes)) {
-            return $this->attributes[$name];
-        }
-
-        return $default;
-    }
-
-    public function setAttribute($name, $value): self
-    {
-        try {
-            MessageDataAssertion::assertPayload(['value' => $value]);
-        } catch (\Throwable $error) {
-            throw new \InvalidArgumentException('Attribute value should be of type and contain only scalar, NULL or array. Got ' . $error->getMessage());
-        }
-
-        $cp = clone $this;
-        $cp->attributes[$name] = $value;
-
-        return $cp;
+        return array_map(function (Node $node): Message {
+            return Message::fromNode($node);
+        }, array_filter($this->nodes, function (Node $node) {
+            return in_array($node->type(), Node::MESSAGE_TYPES);
+        }));
     }
 
     public function addMessage(Message $msg): self
     {
-        if ($this->knowsMessage($msg->name())) {
+        if ($this->knowsMessage($msg)) {
             throw new \RuntimeException('Message is already known. Got ' . $msg->name());
         }
 
@@ -179,12 +152,61 @@ final class MessageFlow
     public function setMessage(Message $msg): self
     {
         $cp = clone $this;
-        $cp->messages[$msg->name()] = $msg;
+        $node = NodeFactory::createMessageNode($msg);
+        $cp->nodes[$node->id()] = $node;
 
-        //Reset internal cmd handler cache
         if ($msg->type() === ProophMsg::TYPE_COMMAND) {
             $cp->commandHandlers = null;
         }
+
+        return $cp;
+    }
+
+    public function knowsNode(Node $node): bool
+    {
+        return $this->knowsNodeWithId($node->id());
+    }
+
+    public function knowsNodeWithId(string $nodeId): bool
+    {
+        return array_key_exists($nodeId, $this->nodes);
+    }
+
+    public function addNode(Node $node): self
+    {
+        if ($this->knowsNode($node)) {
+            throw new \RuntimeException("Node with id {$node->id()} is already set. Got " . json_encode($node->toArray()));
+        }
+
+        return $this->setNode($node);
+    }
+
+    public function setNode(Node $node): self
+    {
+        $cp = clone $this;
+        $cp->nodes[$node->id()] = $node;
+
+        return $cp;
+    }
+
+    public function knowsEdge(Edge $edge): bool
+    {
+        return array_key_exists($edge->id(), $this->edges);
+    }
+
+    public function addEdge(Edge $edge): self
+    {
+        if ($this->knowsEdge($edge)) {
+            throw new \RuntimeException("Edge with id {$edge->id()} is already set. Got " . json_encode($edge->toArray()));
+        }
+
+        return $this->setEdge($edge);
+    }
+
+    public function setEdge(Edge $edge): self
+    {
+        $cp = clone $this;
+        $cp->edges[$edge->id()] = $edge;
 
         return $cp;
     }
@@ -199,13 +221,9 @@ final class MessageFlow
         if (null === $this->commandHandlers) {
             $this->commandHandlers = [];
 
-            foreach ($this->messages() as $message) {
-                if ($message->type() !== ProophMsg::TYPE_COMMAND) {
-                    continue;
-                }
-
-                foreach ($message->handlers() as $handler) {
-                    $this->commandHandlers[] = $handler->isClass() ? $handler->class() : $handler->function();
+            foreach ($this->nodes as $node) {
+                if ($node->type() === Node::TYPE_HANDLER) {
+                    $this->commandHandlers[] = $node->class() ? $node->class() : $node->funcName();
                 }
             }
         }
@@ -218,7 +236,12 @@ final class MessageFlow
         return [
             'project' => $this->project,
             'rootDir' => $this->rootDir,
-            'flow' => $this->flowToArray(),
+            'nodes' => array_map(function (Node $node): array {
+                return $node->toArray();
+            }, $this->nodes),
+            'edges' => array_map(function (Edge $edge): array {
+                return $edge->toArray();
+            }, $this->edges),
         ];
     }
 
@@ -234,39 +257,5 @@ final class MessageFlow
     public function __toString(): string
     {
         return json_encode($this->toArray());
-    }
-
-    private static function flowFromArray(array $flow): array
-    {
-        return [
-            'messages' => array_map(function ($msg): Message {
-                if ($msg instanceof Message) {
-                    return $msg;
-                }
-
-                return Message::fromArray($msg);
-            }, $flow['messages'] ?? []),
-            'eventRecorderInvokers' => array_map(function ($invoker): EventRecorderInvoker {
-                if ($invoker instanceof EventRecorderInvoker) {
-                    return $invoker;
-                }
-
-                return EventRecorderInvoker::fromArray($invoker);
-            }, $flow['eventRecorderInvoker'] ?? []),
-            'attributes' => $flow['attributes'],
-        ];
-    }
-
-    private function flowToArray(): array
-    {
-        return [
-            'messages' => array_map(function (Message $msg): array {
-                return $msg->toArray();
-            }, $this->messages),
-            'eventRecorderInvokers' => array_map(function (EventRecorderInvoker $invoker): array {
-                return $invoker->toArray();
-            }, $this->eventRecorderInvokers),
-            'attributes' => $this->attributes,
-        ];
     }
 }
