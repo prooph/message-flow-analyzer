@@ -55,7 +55,7 @@ class Node
      *
      * @var string
      */
-    private $title;
+    private $name;
 
     /**
      * File containing the class/function
@@ -384,7 +384,7 @@ class Node
         return new self(
             $nodeData['data']['id'] ?? '',
             $nodeData['data']['type'] ?? '',
-            $nodeData['data']['title'] ?? '',
+            $nodeData['data']['name'] ?? '',
             $nodeData['data']['filename'] ?? '',
             $nodeData['data']['description'] ?? null,
             $nodeData['data']['class'] ?? null,
@@ -401,7 +401,7 @@ class Node
     private function __construct(
         string $id,
         string $type,
-        string $title,
+        string $name,
         string $filename,
         string $description = null,
         string $class = null,
@@ -421,8 +421,8 @@ class Node
             throw new \InvalidArgumentException('Node type must not be empty');
         }
 
-        if ($title === '') {
-            throw new \InvalidArgumentException('Node title must not be empty');
+        if ($name === '') {
+            throw new \InvalidArgumentException('Node name must not be empty');
         }
 
         array_walk($tags, function (string $tag) {
@@ -433,7 +433,7 @@ class Node
 
         $this->id = $id;
         $this->type = $type;
-        $this->title = $title;
+        $this->name = $name;
         $this->filename = $filename;
         $this->description = $description;
         $this->class = $class;
@@ -455,7 +455,7 @@ class Node
             'data' => [
                 'id' => $this->id,
                 'type' => $this->type,
-                'title' => $this->title,
+                'name' => $this->name,
                 'filename' => $this->filename,
                 'description' => $this->description,
                 'class' => $this->class,
@@ -489,9 +489,9 @@ class Node
     /**
      * @return string
      */
-    public function title(): string
+    public function name(): string
     {
-        return $this->title;
+        return $this->name;
     }
 
     /**
@@ -574,10 +574,10 @@ class Node
         return $this->schema;
     }
 
-    public function withTitle(string $title): self
+    public function withName(string $name): self
     {
         $cp = clone $this;
-        $cp->title = $title;
+        $cp->name = $name;
 
         return $cp;
     }
