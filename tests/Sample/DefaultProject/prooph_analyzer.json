@@ -8,8 +8,9 @@
   ],
   "classVisitors": [
     "MessageCollector",
-    "MessageHandlerCollector",
+    "CommandHandlerCollector",
     "MessageProducerCollector",
-    "AggregateMethodCollector"
+    "AggregateMethodCollector",
+    "EventListenerCollector"
   ]
 }

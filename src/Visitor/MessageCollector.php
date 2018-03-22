@@ -15,20 +15,25 @@ namespace Prooph\MessageFlowAnalyzer\Visitor;
 use Prooph\Common\Messaging\Message as ProophMsg;
 use Prooph\MessageFlowAnalyzer\MessageFlow;
 use Roave\BetterReflection\Reflection\ReflectionClass;
+use Roave\BetterReflection\Reflector\Exception\IdentifierNotFound;
 
 class MessageCollector implements ClassVisitor
 {
     public function onClassReflection(ReflectionClass $reflectionClass, MessageFlow $messageFlow): MessageFlow
     {
-        if ($reflectionClass->implementsInterface(ProophMsg::class)) {
-            if (! MessageFlow\Message::isRealMessage($reflectionClass)) {
-                return $messageFlow;
-            }
+        try {
+            if ($reflectionClass->implementsInterface(ProophMsg::class)) {
+                if (! MessageFlow\Message::isRealMessage($reflectionClass)) {
+                    return $messageFlow;
+                }
 
-            $msg = MessageFlow\Message::fromReflectionClass($reflectionClass);
-            if (! $messageFlow->knowsMessage($msg)) {
-                $messageFlow = $messageFlow->addMessage($msg);
+                $msg = MessageFlow\Message::fromReflectionClass($reflectionClass);
+                if (! $messageFlow->knowsMessage($msg)) {
+                    $messageFlow = $messageFlow->addMessage($msg);
+                }
             }
+        } catch (IdentifierNotFound $exception) {
+            //An Interface cannot be found, this error can be ignored
         }
 
         return $messageFlow;
