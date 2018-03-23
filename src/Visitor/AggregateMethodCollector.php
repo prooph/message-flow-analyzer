@@ -55,11 +55,13 @@ final class AggregateMethodCollector implements ClassVisitor
 
                 $invokedEventRecorders = ScanHelper::checkIfEventRecorderMethodCallsOtherEventRecorders($eventRecorder);
 
-                foreach ($invokedEventRecorders as $invokedEventRecorder) {
-                    $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge(
-                        Util::codeIdentifierToNodeId($eventRecorder->identifier()),
-                        Util::codeIdentifierToNodeId($invokedEventRecorder->identifier()))
-                    );
+                if($invokedEventRecorders) {
+                    foreach ($invokedEventRecorders as $invokedEventRecorder) {
+                        $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge(
+                                Util::codeIdentifierToNodeId($eventRecorder->identifier()),
+                                Util::codeIdentifierToNodeId($invokedEventRecorder->identifier()))
+                        );
+                    }
                 }
 
                 return $messageFlow;
