@@ -1,5 +1,9 @@
 # prooph message flow analyzer
 
+[![Build Status](https://travis-ci.org/prooph/message-flow-analyzer.svg?branch=master)](https://travis-ci.org/prooph/message-flow-analyzer)
+[![Coverage Status](https://coveralls.io/repos/github/prooph/message-flow-analyzer/badge.svg?branch=master)](https://coveralls.io/github/prooph/message-flow-analyzer?branch=master)
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/prooph/improoph)
+
 A static code analyzer to extract message flow of a prooph project
 
 ## Installation
@@ -74,6 +78,19 @@ You can see `prooph/message-flow-analyzer` in action by running it against [proo
 
 If this is too much work right now and you only want to see the result: [prooph_message_flow.json](https://gist.github.com/codeliner/6bae2c3a5de0a9f93e1d2143f7196f75#file-prooph_message_flow-json)
 
+## Support
 
+- Ask questions on Stack Overflow tagged with [#prooph](https://stackoverflow.com/questions/tagged/prooph).
+- File issues at [https://github.com/prooph/message-flow-analyzer/issues](https://github.com/prooph/message-flow-analyzer/issues).
+- Say hello in the [prooph gitter](https://gitter.im/prooph/improoph) chat.
+
+## Contribute
+
+Please feel free to fork and extend existing or add new plugins and send a pull request with your changes!
+To establish a consistent code quality, please provide unit tests for all your changes and may adapt the documentation.
+
+## License
+
+Released under the [New BSD License](LICENSE).
 
 
