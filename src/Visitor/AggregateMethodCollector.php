@@ -51,7 +51,18 @@ final class AggregateMethodCollector implements ClassVisitor
                     $messageFlow = $messageFlow->addNode(MessageFlow\NodeFactory::createAggregateNode($eventRecorder));
                 }
 
-                return $messageFlow->addEdge(new MessageFlow\Edge($eventRecorderNode->id(), $msgNode->id()));
+                $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge($eventRecorderNode->id(), $msgNode->id()));
+
+                $invokedEventRecorders = ScanHelper::checkIfEventRecorderMethodCallsOtherEventRecorders($eventRecorder);
+
+                foreach ($invokedEventRecorders as $invokedEventRecorder) {
+                    $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge(
+                        Util::codeIdentifierToNodeId($eventRecorder->identifier()),
+                        Util::codeIdentifierToNodeId($invokedEventRecorder->identifier()))
+                    );
+                }
+
+                return $messageFlow;
             },
             function (MessageFlow $messageFlow, ReflectionMethod $method): MessageFlow {
                 $eventRecorder = MessageFlow\EventRecorder::fromReflectionMethod($method);

@@ -14,6 +14,7 @@ namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model;
 
 use Prooph\EventSourcing\AggregateChanged;
 use Prooph\EventSourcing\AggregateRoot;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserActivated;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UsernameChanged;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserRegistered;
 
@@ -26,6 +27,9 @@ class User extends AggregateRoot
         $self = new self();
         $self->recordThat(UserRegistered::occur($id, []));
 
+        //Call another event recording method
+        $self->activate();
+
         return $self;
     }
 
@@ -34,6 +38,11 @@ class User extends AggregateRoot
         $usernameChanged = new UsernameChanged($this->userId, $username);
         //Note: this won't work if it would be executed but we want to test that non AggregateChanged events are tracked, too
         $this->recordThat($usernameChanged);
+    }
+
+    public function activate(): void
+    {
+        $this->recordThat(UserActivated::occur($this->userId, []));
     }
 
     public function addIdentity(string $identityId): Identity

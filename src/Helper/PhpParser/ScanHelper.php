@@ -21,6 +21,7 @@ use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorder;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Prooph\MessageFlowAnalyzer\MessageFlow\MessageHandler;
 use Roave\BetterReflection\Reflection\ReflectionClass;
+use Roave\BetterReflection\Reflection\ReflectionFunctionAbstract;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
 use Roave\BetterReflection\Reflection\ReflectionParameter;
 
@@ -186,6 +187,85 @@ class ScanHelper
         $traverser->traverse($method->getBodyAst());
 
         return $nodeVisitor->getEventRecorderVariables();
+    }
+
+    /**
+     * @param EventRecorder $eventRecorder
+     * @return EventRecorder[]|null
+     */
+    public static function checkIfEventRecorderMethodCallsOtherEventRecorders(EventRecorder $eventRecorder): ?array
+    {
+        if(!$eventRecorder->isClass()) {
+            return [];
+        }
+
+        $method = $eventRecorder->toFunctionLike();
+
+        $nodeVisitor = new class($eventRecorder->class(), $method) extends NodeVisitorAbstract {
+            private $recorderClass;
+            private $method;
+            private $eventRecorders;
+            private $nodeTraverser;
+
+            public function __construct(string $recorderClass, ReflectionMethod $method)
+            {
+                $this->recorderClass = ReflectionClass::createFromName($recorderClass);
+                $this->method = $method;
+            }
+
+            public function leaveNode(Node $node)
+            {
+                if ($node instanceof Node\Expr\MethodCall && $this->recorderClass->hasMethod($node->name)) {
+                    $calledMethod = $this->recorderClass->getMethod($node->name);
+
+                    $producedMsgs = $this->checkMethodProducesMessages($calledMethod);
+
+                    if(count($producedMsgs)) {
+                        $this->eventRecorders[] = EventRecorder::fromReflectionMethod($calledMethod);
+                    }
+                }
+            }
+
+            /**
+             * @return EventRecorder[]|null
+             */
+            public function getEventRecorders(): ?array
+            {
+                return $this->eventRecorders;
+            }
+
+            /**
+             * @param ReflectionMethod $method
+             * @return Message[]|null
+             */
+            private function checkMethodProducesMessages(ReflectionMethod $method): array
+            {
+                try {
+                    $bodyAst = $method->getBodyAst();
+                } catch (\TypeError $error) {
+                    return [];
+                }
+
+                $this->getTraverser()->traverse($bodyAst);
+
+                return $this->getTraverser()->messageScanner()->popFoundMessages();
+            }
+
+            private function getTraverser(): MessageScanningNodeTraverser
+            {
+                if (null === $this->nodeTraverser) {
+                    $this->nodeTraverser = new MessageScanningNodeTraverser(new NodeTraverser(), new MessageScanner());
+                }
+
+                return $this->nodeTraverser;
+            }
+        };
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($nodeVisitor);
+        $traverser->traverse($method->getBodyAst());
+
+        return $nodeVisitor->getEventRecorders();
     }
 
     public static function checkIfEventRecorderMethodIsUsedAsFactory(EventRecorder $eventRecorder): ?EventRecorder

@@ -73,11 +73,13 @@ class ProjectTraverserTest extends BaseTestCase
             Util::codeIdentifierToNodeId(ChangeUsername::class) => [Node::TYPE_COMMAND, ChangeUsername::class],
             Util::codeIdentifierToNodeId(RegisterUser::class) => [Node::TYPE_COMMAND, RegisterUser::class],
             Util::codeIdentifierToNodeId(UserRegistered::class) => [Node::TYPE_EVENT, UserRegistered::class],
+            Util::codeIdentifierToNodeId(User\Event\UserActivated::class) => [Node::TYPE_EVENT, UserRegistered::class],
             Util::codeIdentifierToNodeId(RegisterUserHandler::class . '::__invoke') => [Node::TYPE_HANDLER, RegisterUserHandler::class . '::__invoke'],
             Util::codeIdentifierToNodeId(UserController::class . '::postAction') => [Node::TYPE_SERVICE, UserController::class . '::postAction'],
             Util::codeIdentifierToNodeId(UserController::class . '::patchAction') => [Node::TYPE_SERVICE, UserController::class . '::patchAction'],
             Util::codeIdentifierToNodeId(SendConfirmationEmail::class.'::onUserRegistered') => [Node::TYPE_LISTENER, SendConfirmationEmail::class.'::onUserRegistered'],
             Util::codeIdentifierToNodeId(User::class . '::register') => [Node::TYPE_AGGREGATE, User::class . '::register'],
+            Util::codeIdentifierToNodeId(User::class . '::activate') => [Node::TYPE_AGGREGATE, User::class . '::activate'],
             Util::codeIdentifierToNodeId(User::class) => [Node::TYPE_AGGREGATE, User::class],
             Util::codeIdentifierToNodeId(IdentityAdder::class . '::onUserRegistered') => [Node::TYPE_PROCESS_MANAGER, IdentityAdder::class . '::onUserRegistered'],
             Util::codeIdentifierToNodeId(Identity::class . '::add') => [Node::TYPE_AGGREGATE, Identity::class . '::add'],
@@ -110,6 +112,10 @@ class ProjectTraverserTest extends BaseTestCase
                 Util::codeIdentifierToNodeId(User::class . '::addIdentity'),
                 Util::codeIdentifierToNodeId(Identity::class . '::add')
             ))->id() => [User::class . '::addIdentity', Identity::class . '::add'],
+            (new Edge(
+                Util::codeIdentifierToNodeId(User::class . '::register'),
+                Util::codeIdentifierToNodeId(User::class . '::activate')
+            ))->id() => [User::class . '::register', User::class . '::activate'],
         ];
 
         $edges = $msgFlow->edges();
