@@ -16,5 +16,4 @@ use Prooph\EventSourcing\AggregateChanged;
 
 class UserActivated extends AggregateChanged
 {
-
 }

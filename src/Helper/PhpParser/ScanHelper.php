@@ -21,7 +21,6 @@ use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorder;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Prooph\MessageFlowAnalyzer\MessageFlow\MessageHandler;
 use Roave\BetterReflection\Reflection\ReflectionClass;
-use Roave\BetterReflection\Reflection\ReflectionFunctionAbstract;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
 use Roave\BetterReflection\Reflection\ReflectionParameter;
 
@@ -195,7 +194,7 @@ class ScanHelper
      */
     public static function checkIfEventRecorderMethodCallsOtherEventRecorders(EventRecorder $eventRecorder): ?array
     {
-        if(!$eventRecorder->isClass()) {
+        if (! $eventRecorder->isClass()) {
             return [];
         }
 
@@ -220,7 +219,7 @@ class ScanHelper
 
                     $producedMsgs = $this->checkMethodProducesMessages($calledMethod);
 
-                    if(count($producedMsgs)) {
+                    if (count($producedMsgs)) {
                         $this->eventRecorders[] = EventRecorder::fromReflectionMethod($calledMethod);
                     }
                 }

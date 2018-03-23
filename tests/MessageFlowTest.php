@@ -19,7 +19,6 @@ use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\Chan
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\ChangeUsernameHandler;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUser;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUserHandler;
-use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserActivated;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserRegistered;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 
