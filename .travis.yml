@@ -1,131 +1,23 @@
 language: php
 
-sudo: false
+dist: trusty
 
 matrix:
   fast_finish: true
   include:
     - php: 7.1
-      dist: trusty
-      sudo: true
       env:
         - DEPENDENCIES=""
-        - DRIVER="pdo_mysql"
-        - DB=mariadb_10.2
-      addons:
-          mariadb: '10.2'
-    - php: 7.1
-      dist: trusty
-      sudo: true
-      env:
-        - DEPENDENCIES="--prefer-lowest --prefer-stable"
-        - DRIVER="pdo_mysql"
-        - DB=mariadb_10.2
-      addons:
-          mariadb: '10.2'
-    - php: 7.1
-      dist: trusty
-      sudo: true
-      env:
-        - DEPENDENCIES=""
-        - DRIVER="pdo_mysql"
-        - DB=mariadb_10.2
-        - DB_ATTR_ERRMODE=2 # \PDO::ERRMODE_EXCEPTION
-      addons:
-          mariadb: '10.2'
-    - php: 7.1
-      sudo: true
-      env:
-        - DEPENDENCIES=""
-        - DRIVER="pdo_mysql"
-        - DB=mysql_5.7
-    - php: 7.1
-      sudo: true
-      env:
-        - DEPENDENCIES="--prefer-lowest --prefer-stable"
-        - DRIVER="pdo_mysql"
-        - DB=mysql_5.7
-    - php: 7.1
-      sudo: true
-      env:
-        - DEPENDENCIES=""
-        - DRIVER="pdo_mysql"
-        - DB=mysql_5.7
-        - DB_ATTR_ERRMODE=2 # \PDO::ERRMODE_EXCEPTION
-    - php: 7.1
-      env:
-        - DEPENDENCIES=""
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.4
-      addons:
-        postgresql: '9.4'
-    - php: 7.1
-      env:
-        - DEPENDENCIES="--prefer-lowest --prefer-stable"
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.4
-      addons:
-        postgresql: '9.4'
-    - php: 7.1
-      env:
-        - DEPENDENCIES=""
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.4
-        - DB_ATTR_ERRMODE=2 # \PDO::ERRMODE_EXCEPTION
-      addons:
-        postgresql: '9.4'
-    - php: 7.1
-      dist: trusty
-      env:
-        - DEPENDENCIES=""
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.5
-      addons:
-        postgresql: '9.5'
-    - php: 7.1
-      dist: trusty
-      env:
-        - DEPENDENCIES="--prefer-lowest --prefer-stable"
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.5
-      addons:
-        postgresql: '9.5'
-    - php: 7.1
-      dist: trusty
-      env:
-        - DEPENDENCIES=""
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.5
-        - DB_ATTR_ERRMODE=2 # \PDO::ERRMODE_EXCEPTION
-      addons:
-        postgresql: '9.5'
-    - php: 7.1
-      dist: trusty
-      env:
-        - DEPENDENCIES=""
-        - EXECUTE_CS_CHECK=true
         - TEST_COVERAGE=true
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.6
-      addons:
-        postgresql: '9.6'
     - php: 7.1
-      dist: trusty
       env:
         - DEPENDENCIES="--prefer-lowest --prefer-stable"
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.6
-      addons:
-        postgresql: '9.6'
-    - php: 7.1
-      dist: trusty
+    - php: 7.2
       env:
         - DEPENDENCIES=""
-        - DRIVER="pdo_pgsql"
-        - DB=postgres_9.6
-        - DB_ATTR_ERRMODE=2 # \PDO::ERRMODE_EXCEPTION
-      addons:
-        postgresql: '9.6'
+    - php: 7.2
+      env:
+        - DEPENDENCIES="--prefer-lowest --prefer-stable"
 
 cache:
   directories:
@@ -136,18 +28,13 @@ cache:
 before_script:
   - mkdir -p "$HOME/.php-cs-fixer"
   - phpenv config-rm xdebug.ini
-  - VENDOR=$(echo $DB | cut -d'_' -f 1)
-  - if [[ $DB == 'mysql_5.7' ]]; then bash .travis.install-mysql-5.7.sh; fi
-  - if [[ $DRIVER == 'pdo_mysql' ]]; then  mysql -e 'create database event_store_tests;'; fi
-  - if [[ $DRIVER == 'pdo_pgsql' ]]; then psql -c 'create database event_store_tests;' -U postgres; fi
   - composer self-update
   - composer update $DEPENDENCIES
 
 script:
-  - cp phpunit.xml.$VENDOR phpunit.xml
   - if [[ $TEST_COVERAGE == 'true' ]]; then php -dzend_extension=xdebug.so ./vendor/bin/phpunit --coverage-text --coverage-clover ./build/logs/clover.xml; else ./vendor/bin/phpunit; fi
-  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/php-cs-fixer fix -v --diff --dry-run; fi
-  - if [[ $EXECUTE_CS_CHECK == 'true' ]]; then ./vendor/bin/docheader check src/ tests/; fi
+  - ./vendor/bin/php-cs-fixer fix -v --diff --dry-run
+  - ./vendor/bin/docheader check src/ tests/
 
 after_success:
   - if [[ $TEST_COVERAGE == 'true' ]]; then php vendor/bin/coveralls -v; fi
