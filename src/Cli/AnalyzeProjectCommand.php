@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Prooph\MessageFlowAnalyzer\Cli;
 
 use Prooph\MessageFlowAnalyzer\Helper\ProjectTraverserFactory;
+use Prooph\MessageFlowAnalyzer\MessageFlow\NodeFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -81,6 +82,10 @@ EOT
 
         $targetFile = $input->getOption('output');
         $formatterName = $input->getOption('format');
+
+        if (isset($config['nodeClass'])) {
+            NodeFactory::useNodeClass($config['nodeClass']);
+        }
 
         $traverser = ProjectTraverserFactory::buildTraverserFromConfig($config);
         $finalizers = ProjectTraverserFactory::buildFinalizersFromConfig($config);
