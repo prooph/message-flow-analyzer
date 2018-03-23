@@ -83,9 +83,14 @@ EOT
         $formatterName = $input->getOption('format');
 
         $traverser = ProjectTraverserFactory::buildTraverserFromConfig($config);
+        $finalizers = ProjectTraverserFactory::buildFinalizersFromConfig($config);
         $formatter = ProjectTraverserFactory::buildOutputFormatter($formatterName);
 
         $msgFlow = $traverser->traverse($rootDir);
+
+        foreach ($finalizers as $finalizer) {
+            $msgFlow = $finalizer->finalize($msgFlow);
+        }
 
         file_put_contents($targetFile, $formatter->messageFlowToString($msgFlow));
 

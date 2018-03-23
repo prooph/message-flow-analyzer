@@ -16,6 +16,7 @@ use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeTestsDir;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Finalizer;
 use Prooph\MessageFlowAnalyzer\Output\Formatter;
 use Prooph\MessageFlowAnalyzer\Output\JsonPrettyPrint;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
@@ -43,6 +44,8 @@ final class ProjectTraverserFactory
     ];
 
     public static $fileInfoVisitorAliases = [];
+
+    public static $finalizerAliases = [];
 
     public static $outputFormatterAliases = [
         'JsonPrettyPrint' => JsonPrettyPrint::class,
@@ -72,6 +75,26 @@ final class ProjectTraverserFactory
         }
 
         return $traverser;
+    }
+
+    /**
+     * @param array $config
+     * @return Finalizer[]
+     */
+    public static function buildFinalizersFromConfig(array $config): array
+    {
+        $finalizers = [];
+
+        foreach ($config['finalizers'] ?? [] as $finalizerClass) {
+            $finalizerClass = self::$finalizerAliases[$finalizerClass] ?? $finalizerClass;
+            $f = new $finalizerClass();
+            if (! $f instanceof Finalizer) {
+                throw new \InvalidArgumentException("Invalid finalizer: Finalizer interface not implemented by $finalizerClass");
+            }
+            $finalizers[] = $f;
+        }
+
+        return $finalizers;
     }
 
     public static function buildOutputFormatter(string $nameOrClass): Formatter
