@@ -137,7 +137,7 @@ class Node
      *
      * If not set a circle is used as default shape
      *
-     * @var string/null
+     * @var NodeIcon/null
      */
     private $icon = null;
 
@@ -181,7 +181,7 @@ class Node
             $message->filename(),
             null,
             $message->class()
-        ))->withTag('message')->withIcon('fa-envelope')->withColor($color);
+        ))->withTag('message')->withIcon(NodeIcon::faSolid('fa-envelope'))->withColor($color);
     }
 
     /**
@@ -214,7 +214,7 @@ class Node
             null,
             $handler->class(),
             $handler->function()
-        ))->withTag('command')->withIcon('fa-sign-out-alt')->withColor('#1B1C1D');
+        ))->withTag('command')->withIcon(NodeIcon::faSolid('fa-sign-out-alt'))->withColor('#1B1C1D');
     }
 
     /**
@@ -268,7 +268,7 @@ class Node
             null,
             Util::codeIdentifierToNodeId($eventRecorder->class())
         ))->withTag('event')->withTag('recorder')
-            ->withIcon('fa-chevron-circle-right')->withColor('#EECA51')
+            ->withIcon(NodeIcon::faSolid('fa-chevron-circle-right'))->withColor('#EECA51')
             ->withParentColor('#E9F2F7');
     }
 
@@ -298,7 +298,7 @@ class Node
             null,
             Util::codeIdentifierToNodeId($eventRecorderInvoker->class())
         ))->withTag('event')->withTag('factory')
-            ->withIcon('fa-industry')->withColor('#EECA51')
+            ->withIcon(NodeIcon::faSolid('fa-industry'))->withColor('#EECA51')
             ->withParentColor('#E9F2F7');
     }
 
@@ -324,7 +324,7 @@ class Node
             null,
             $messageHandler->class(),
             $messageHandler->function()
-        ))->withTag('event')->withIcon('fa-bell')->withColor('#6435C9');
+        ))->withTag('event')->withIcon(NodeIcon::faSolid('fa-bell'))->withColor('#6435C9');
     }
 
     /**
@@ -357,7 +357,7 @@ class Node
             null,
             $messageProducer->class(),
             $messageProducer->function()
-        ))->withTag('command')->withTag('producer')->withIcon('fa-cogs')->withColor('#715671');
+        ))->withTag('command')->withTag('producer')->withIcon(NodeIcon::faSolid('fa-cogs'))->withColor('#715671');
     }
 
     /**
@@ -383,7 +383,7 @@ class Node
             null,
             $messageProducer->class(),
             $messageProducer->function()
-        ))->withTag($message->type())->withTag('producer')->withIcon('fa-cogs')->withColor('#1B1C1D');
+        ))->withTag($message->type())->withTag('producer')->withIcon(NodeIcon::faSolid('fa-cogs'))->withColor('#1B1C1D');
     }
 
     public static function fromArray(array $nodeData)
@@ -407,7 +407,7 @@ class Node
             $nodeData['data']['funcName'] ?? null,
             $nodeData['data']['parent'] ?? null,
             $tags,
-            $nodeData['data']['icon'] ?? null,
+            NodeIcon::fromString($nodeData['data']['icon']) ?? null,
             $nodeData['data']['color'] ?? null,
             $nodeData['data']['parentColor'] ?? null,
             $nodeData['data']['schema'] ?? null
@@ -425,7 +425,7 @@ class Node
         string $funcName = null,
         string $parent = null,
         array $tags = [],
-        string $icon = null,
+        NodeIcon $icon = null,
         string $color = null,
         string $parentColor = null,
         array $schema = null
@@ -480,7 +480,7 @@ class Node
                 'method' => $this->method,
                 'funcName' => $this->funcName,
                 'parent' => $this->parent,
-                'icon' => $this->icon,
+                'icon' => (string) $this->icon,
                 'color' => $this->color,
                 'parentColor' => $this->parentColor,
                 'schema' => $this->schema,
@@ -570,9 +570,9 @@ class Node
     }
 
     /**
-     * @return string
+     * @return NodeIcon|null
      */
-    public function icon(): string
+    public function icon(): ?NodeIcon
     {
         return $this->icon;
     }
@@ -712,7 +712,7 @@ class Node
         return $cp;
     }
 
-    public function withIcon(string $icon): self
+    public function withIcon(NodeIcon $icon): self
     {
         $cp = clone $this;
         $cp->icon = $icon;
