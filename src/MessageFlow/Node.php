@@ -81,12 +81,12 @@ class Node
     private $class = null;
 
     /**
-     * Method of the class connect with another node
+     * Method of the class that is connected with another node
      *
      * Example:
-     * - Command Handler method handling a command (connected node)
-     * - Aggregate method called by a command handler method (connected node)
-     * - Process manager method listening on event (connected node)
+     * - Command Handler method (source node) handling a command (target node)
+     * - Aggregate method (source node) called by a command handler method (target node)
+     * - Process manager method (source node) listening on event (target node)
      * - ...
      *
      * @var string/null

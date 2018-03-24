@@ -4,7 +4,9 @@
 [![Coverage Status](https://coveralls.io/repos/github/prooph/message-flow-analyzer/badge.svg?branch=master)](https://coveralls.io/github/prooph/message-flow-analyzer?branch=master)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/prooph/improoph)
 
-A static code analyzer to extract message flow of a prooph project
+A static code analyzer to extract a message flow of a prooph project. Results can be visualized in the [prooph Mgmt UI](https://github.com/prooph/event-store-mgmt-ui).
+
+![Model Exploration](https://github.com/prooph/proophessor/blob/master/assets/prooph_do_exploration.gif)
 
 ## Installation
 
@@ -25,7 +27,7 @@ php vendor/bin/prooph-analyzer project:analyze
 
 ## Why?
 
-The prooph message flow analyzer scans your project for prooph messages and collects information how these messages flow through your project source code :)
+The prooph message flow analyzer scans your project for prooph messages and collects information how these messages flow through your system :)
 
 The analysis contains information about:
 
@@ -36,19 +38,11 @@ The analysis contains information about:
 
 The message flow is written to an output file (`prooph_message_flow.json` by default).
 
-For now that's it. But imagine what you can do with this information! We'll add different output formatters to generate config for d3js or draw.io.
-The message flow analyzer will also be part of the upcoming `event-store-mgmt-ui` and will allow you to connect the message flow with your event streams
-for debugging and monitoring.
-
 ## How?
 
 The package uses the excellent libraries [roave/better-reflection](https://github.com/Roave/BetterReflection)
 and [nikic/php-parser](https://github.com/nikic/PHP-Parser) (which is used by Roave/BetterReflection internally, too)
 
-## WIP
-
-`prooph/message-flow-analyzer` and the `event-store-mgmt-ui` are work in progress. There is no roadmap defined yet. If you think your project could benefit
-from a stable version and you or your company would like to support development then [get in touch](http://getprooph.org/#get-in-touch).
 
 ## Filters
 
@@ -63,20 +57,18 @@ interesting in the class it can add this information to the `MessageFlow`.
 
 Again `prooph/message-flow-analyzer` ships with default class visitors (see example config) which can be found in the [Visitor dir](https://github.com/prooph/message-flow-analyzer/tree/master/src/Visitor). 
 
+## Documentation
+
+Documentation is [in the doc tree](docs/), and can be compiled using [bookdown](http://bookdown.io).
+
+```console
+$ php ./vendor/bin/bookdown docs/bookdown.json
+$ php -S 0.0.0.0:8080 -t docs/html/
+```
+
 ## Run it against proophessor-do
 
-You can see `prooph/message-flow-analyzer` in action by running it against [proophessor-do](https://github.com/prooph/proophessor-do).
-
-1. Clone proophessor-do
-2. Add `prooph/message-flow-analyzer: dev-master` to the `require-dev` config of proophessor-do's `composer.json`
-3. Run composer install
-4. Copy [prooph_analyzer.json](https://github.com/prooph/message-flow-analyzer/blob/master/tests/Sample/DefaultProject/prooph_analyzer.json) into root dir of proophessor-do
-5. Copy [ExcludeBlacklistedFiles.php](https://gist.github.com/codeliner/6bae2c3a5de0a9f93e1d2143f7196f75#file-excludeblacklistedfiles-php) into `src/Infrastructure/ProophAnalyzer`.
-   This is needed because proophessor-do contains a prepared factory for mongodb connection but mongo is not installed by default so the mongo classes cannot be loaded.
-6. Add `"Prooph\\ProophessorDo\\Infrastructure\\ProophAnalyzer\\ExcludeBlacklistedFiles"` as last entry in the `prooph_analyzer.json` `fileInfoFilters` array.
-7. Run `php vendor/bin/prooph-analyzer project:analyze` and watch the generated output file `prooph_message_flow.json`
-
-If this is too much work right now and you only want to see the result: [prooph_message_flow.json](https://gist.github.com/codeliner/6bae2c3a5de0a9f93e1d2143f7196f75#file-prooph_message_flow-json)
+You can see the `prooph/message-flow-analyzer` in action by running it against [proophessor-do](https://github.com/prooph/proophessor-do) or [proophessor-do-symfony](https://github.com/prooph/proophessor-do-symfony).
 
 ## Support
 
