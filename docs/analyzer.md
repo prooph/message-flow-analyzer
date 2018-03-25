@@ -15,7 +15,7 @@ php vendor/bin/prooph-analyzer project:analyze --help
 ```bash
 php vendor/bin/prooph-analyzer project:analyze -vvv
 ```
-By default the analyzer uses current working dir as the root for the analysis.
+By default the analyzer uses current working dir as the root of the analysis.
 It looks for a config file called `prooph_analyzer.json`. More on this in the configuration section.
 
 A successful run produces a `prooph_message_flow.json` with the results. This file can be imported into

@@ -414,7 +414,7 @@ class Node
         );
     }
 
-    private function __construct(
+    protected function __construct(
         string $id,
         string $type,
         string $name,

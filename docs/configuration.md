@@ -5,7 +5,7 @@ An example of a default config can be found in the [test example project](https:
 
 ## fileInfoFilters
 
-You can add include and exclude filters for files and directories.
+You can add `include` and `exclude` filters for files and directories.
 
 Configuration should be a List of filter classes implementing `Prooph\MessageFlowAnalyzer\Filter\FileInfoFilter`.
 
@@ -22,7 +22,7 @@ Configuration should be a List of filter classes implementing `Prooph\MessageFlo
 ```
 A filter should be constructable without arguments. The message flow analyzer ships with a set of default
 filters listed above. The last filter in the example is a project specific filter. Such filters needed to be listed
-with their full qualified class name. Default filters are aliased (namespace is excluded).
+with their full qualified class name. Default filters are aliased.
 
 The filter interface defines a simple method:
 
@@ -35,6 +35,8 @@ interface FileInfoFilter
 }
 ```
 Return `true` to include current file or directory or `false` otherwise.
+
+*Note: If you want to scan non php files you **should not use the IncludePHPFile** filter because it returns only true for php files.*
 
 ## fileInfoVisitors
 
@@ -52,7 +54,7 @@ Configuration:
 }
 ```
 A file info visitor should be constructable without arguments.
-Not default visitors are available but you can write your own.
+No default visitors are available but you can write your own.
 The interface is:
 
 ```php
@@ -113,9 +115,9 @@ interface ClassVisitor
 
 ## Finalizers
 
-Finalizers are invoked after project scan is completed. They get the final message flow injected and can add not analyzed
-nodes, missing edges or modify the existing ones. This can be very handy if you want to complete the message flow with 
-information that cannot be analyzed during project scan (for example used databases or queues).
+Finalizers are invoked after project scan is completed. They get the final message flow injected and can add missing
+nodes and edges or modify the existing ones. This can be very handy if you want to complete the message flow with 
+information that cannot be analyzed during project scan (for example database or queue nodes).
 
 Configuration:
 
@@ -143,7 +145,7 @@ interface Finalizer
     public function finalize(MessageFlow $messageFlow): MessageFlow;
 }
 ```
-Let's take the example from above again. This time we want to change the icon of all message nodes with a finalizer.
+Let's take the message icon example again. This time we want to change the icon of all message nodes with a finalizer.
 So the analyzer still uses the default `MessageCollector` but we change the icon after a scan.
 
 ```php
@@ -256,9 +258,9 @@ final class JsonPrettyPrint implements Formatter
 }
 ```
 The resulting json string is read by the [prooph Mgmt UI](https://github.com/prooph/event-store-mgmt-ui) to draw
-the nodes and edges of the message flow.
+the nodes and edges of the flow.
 
-`JSON_PRETTY_PRINT` is used by default to get a human readable file. If you want send the file over the wire you might use
+`JSON_PRETTY_PRINT` is used by default to get a human readable file. If you want to send the file over the wire you might use
 your own output formatter without the pretty print option or maybe you want to import the nodes and edges in a graph database
 and need a different format. 
 
@@ -331,7 +333,8 @@ You can use all **free** [font awesome icons](https://fontawesome.com/icons?d=ga
 $node = $node->withIcon(MessageFlow\NodeIcon::faSolid('fa-paper-plane'));
 $node = $node->withIcon(MessageFlow\NodeIcon::faBrand('fa-php'));
 $node = $node->withIcon(MessageFlow\NodeIcon::faRegular('fa-bell'));
-$node = $node->withIcon(MessageFlow\NodeIcon::link('https://static.acme.com/assets/logo.svg'));
+$node = $node->withIcon(MessageFlow\NodeIcon::link('https://static.acme.com/assets/logo.svg')); 
+//svg: viewPort="0 0 512 512", img: w 75 x h 50
 ```
 
 

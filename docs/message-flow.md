@@ -118,9 +118,9 @@ class Node
      * Method of the class that is connected with another node
      *
      * Example:
-     * - Command Handler method (source node) handling a command (target node)
-     * - Aggregate method (source node) called by a command handler method (target node)
-     * - Process manager method (source node) listening on event (target node)
+     * - Command Handler method (target node) handling a command (source node)
+     * - Aggregate method (target node) called by a command handler method (source node)
+     * - Process manager method (target node) listening on event (source node)
      * - ...
      *
      * @var string/null
@@ -167,16 +167,16 @@ class Node
     private $tags = [];
 
     /**
-     * FontAwesome icon name for the node
+     * FontAwesome or link icon for the node
      *
-     * If not set a circle is used as default shape
+     * If not set a circle icon is used as default
      *
      * @var NodeIcon/null
      */
     private $icon = null;
 
     /**
-     * If set it overrides the default color used for the node type
+     * Specify the color for the node, if not set a default is used depending on node type
      *
      * @var string|null
      */
@@ -288,9 +288,9 @@ Also most of the node attributes can be modified using corresponding `with<attri
 Message flow node objects are immutable, too. Hence, those methods return new node instances instead of modifying the
 original one.
 
-The built-in `class visitors` shipped with the analyzer use a `Prooph\MessageFlowAnalyzer\MessageFlow\NodeFactory` to create
-the nodes. The factory is a proxy to the named constructors with an option to call a custom `Node` implementation instead of
-the default one. This allows you to easily override default attributes. Again see `configuration` page for details.
+The built-in `class visitors` use a `Prooph\MessageFlowAnalyzer\MessageFlow\NodeFactory` to create nodes. 
+The factory is a proxy to the named constructors with an option to call a custom `Node` implementation. 
+This allows you to easily override default attributes. Again see `configuration` page for details.
 
 Here is an example of a `class visitor` that inspects a reflected php class and if it is a `prooph message` the visitor:
 
@@ -333,7 +333,7 @@ class MessageCollector implements ClassVisitor
 }
 ```
 
-The visualization of that node will look something like this:
+The visualization of that node will look something like that:
 
 ![Paper Plane Node](img/paper-plane.png)
 

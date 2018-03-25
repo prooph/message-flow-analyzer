@@ -22,7 +22,7 @@ An example of a default config can be found in the [test example project](https:
 ## Run
 
 ```bash
-php vendor/bin/prooph-analyzer project:analyze
+php vendor/bin/prooph-analyzer project:analyze -vvv
 ```
 
 ## Why?

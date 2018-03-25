@@ -4,7 +4,8 @@
     {"intro": "introduction.md"},
     {"analyzer": "analyzer.md"},
     {"messageflow": "message-flow.md"},
-    {"config": "configuration.md"}
+    {"config": "configuration.md"},
+    {"troubleshooting": "troubleshooting.md"}
   ],
   "tocDepth": 1,
   "numbering": false,
