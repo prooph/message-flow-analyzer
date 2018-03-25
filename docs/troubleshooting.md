@@ -13,12 +13,12 @@ you get an appropriate message.
 
 ## Interface or Class not found
 
-In some cases the underlying parser and reflection libs cannot find a class or interface. We need to inspect some of the
-issues. For example in our demo app [proophessor-do] we need to exclude classes that implement `Psr\Http\Server\MiddlewareInterface` interface.
+In some cases the underlying parser and reflection libs cannot find a class or interface. 
+For example in our demo app [proophessor-do](https://github.com/prooph/proophessor-do) we need to exclude classes that implement `Psr\Http\Server\MiddlewareInterface` interface.
 For some reason the interface cannot be loaded. We will check the issue but something like that can always happen and
-it would be better if you cannot get a result just because of a weird bug.
+it would be bad if you cannot get a result just because of a weird bug.
 
-Simply use a blacklist filter to exclude problematic files. Here is an example:
+Blacklist filters to the rescue! You can exclude problematic files. Here is an example:
 
 ```php
 <?php
