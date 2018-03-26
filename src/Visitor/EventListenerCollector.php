@@ -60,7 +60,7 @@ final class EventListenerCollector implements ClassVisitor
             $messageFlow = $messageFlow->addNode($node);
         }
 
-        $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge(Util::codeIdentifierToNodeId($message->name()), $node->id()));
+        $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge(Util::codeIdentifierToNodeId($message->name()), $node->id()));
 
         return $messageFlow;
     }

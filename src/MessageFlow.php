@@ -189,20 +189,6 @@ final class MessageFlow
         return $cp;
     }
 
-    public function knowsEdge(Edge $edge): bool
-    {
-        return array_key_exists($edge->id(), $this->edges);
-    }
-
-    public function addEdge(Edge $edge): self
-    {
-        if ($this->knowsEdge($edge)) {
-            throw new \RuntimeException("Edge with id {$edge->id()} is already set. Got " . json_encode($edge->toArray()));
-        }
-
-        return $this->setEdge($edge);
-    }
-
     public function setEdge(Edge $edge): self
     {
         $cp = clone $this;

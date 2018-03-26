@@ -97,7 +97,7 @@ class AddEventStore implements MessageFlow\Finalizer
             if($node->type() === MessageFlow\Node::TYPE_EVENT) {
                 //Add a new edge with event node id being the source
                 //and event store being the target
-                $messageFlow = $messageFlow->addEdge(
+                $messageFlow = $messageFlow->setEdge(
                     new MessageFlow\Edge(
                         $node->id(),
                         $esNode->id()        

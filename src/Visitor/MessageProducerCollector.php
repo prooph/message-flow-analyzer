@@ -57,8 +57,8 @@ class MessageProducerCollector implements ClassVisitor
                         $messageFlow = $messageFlow->addNode($pmNode);
                     }
 
-                    $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge(Util::codeIdentifierToNodeId($receivedMsg->name()), $pmNode->id()));
-                    $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge($pmNode->id(), $msgNode->id()));
+                    $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge(Util::codeIdentifierToNodeId($receivedMsg->name()), $pmNode->id()));
+                    $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge($pmNode->id(), $msgNode->id()));
                 } else {
                     $messageProducerNode = MessageFlow\NodeFactory::createMessageProducingServiceNode($messageProducer, $message);
 

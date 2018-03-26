@@ -19,12 +19,6 @@ An edge simply takes a `sourceNodeId` and `targetNodeId` as arguments and is add
 ```php
 $abEdge = new Edge($nodeA->id(), $nodeB->id());
 
-//Check if edge is already known, otherwise add will throw an exception
-if(!$messageFlow->knowsEdge($abEdge)) {
-    $messageFlow = $messageFlow->addEdge($abEdge);
-}
-
-//Or to override an existing edge for the same nodes:
 $messageFlow = $messageFlow->setEdge($abEdge);
 ```
 

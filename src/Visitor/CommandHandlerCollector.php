@@ -50,12 +50,12 @@ final class CommandHandlerCollector implements ClassVisitor
             $messageFlow = $messageFlow->addNode($node);
         }
 
-        $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge(Util::codeIdentifierToNodeId($message->name()), $node->id()));
+        $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge(Util::codeIdentifierToNodeId($message->name()), $node->id()));
 
         $eventRecorders = ScanHelper::findInvokedEventRecorders($handler);
 
         foreach ($eventRecorders as $eventRecorder) {
-            $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge($node->id(), Util::codeIdentifierToNodeId($eventRecorder->identifier())));
+            $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge($node->id(), Util::codeIdentifierToNodeId($eventRecorder->identifier())));
         }
 
         return $messageFlow;

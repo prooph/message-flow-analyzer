@@ -51,13 +51,13 @@ final class AggregateMethodCollector implements ClassVisitor
                     $messageFlow = $messageFlow->addNode(MessageFlow\NodeFactory::createAggregateNode($eventRecorder));
                 }
 
-                $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge($eventRecorderNode->id(), $msgNode->id()));
+                $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge($eventRecorderNode->id(), $msgNode->id()));
 
                 $invokedEventRecorders = ScanHelper::checkIfEventRecorderMethodCallsOtherEventRecorders($eventRecorder);
 
                 if ($invokedEventRecorders) {
                     foreach ($invokedEventRecorders as $invokedEventRecorder) {
-                        $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge(
+                        $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge(
                                 Util::codeIdentifierToNodeId($eventRecorder->identifier()),
                                 Util::codeIdentifierToNodeId($invokedEventRecorder->identifier()))
                         );
@@ -79,7 +79,7 @@ final class AggregateMethodCollector implements ClassVisitor
                     }
 
                     $builtEventRecorderNode = MessageFlow\NodeFactory::createEventRecordingAggregateMethodNode($builtEventRecorder);
-                    $messageFlow = $messageFlow->addEdge(new MessageFlow\Edge($aggregateFactoryMethodNode->id(), $builtEventRecorderNode->id()));
+                    $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge($aggregateFactoryMethodNode->id(), $builtEventRecorderNode->id()));
                 }
 
                 return $messageFlow;
