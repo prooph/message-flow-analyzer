@@ -89,9 +89,13 @@ final class ProjectTraverser
         $iterator = new \RecursiveIteratorIterator($filter);
 
         foreach ($iterator as $file) {
-            /** @var $file \SplFileInfo */
-            if ($file->isFile()) {
-                $msgFlow = $this->handleFile($file, $msgFlow);
+            try {
+                /** @var $file \SplFileInfo */
+                if ($file->isFile()) {
+                    $msgFlow = $this->handleFile($file, $msgFlow);
+                }
+            } catch (\Throwable $e) {
+                throw new \RuntimeException("Error while handling file {$file->getPathname()}. Please see previous exception for details.", $e->getCode(), $e);
             }
         }
 
