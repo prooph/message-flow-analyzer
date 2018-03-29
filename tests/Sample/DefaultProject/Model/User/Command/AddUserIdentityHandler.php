@@ -15,22 +15,17 @@ namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Comman
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\IdentityRepository;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\UserRepository;
 
-class AddUserIdentityHandler
+class AddUserIdentityHandler extends AbstractIdentityHandler
 {
     /**
      * @var UserRepository
      */
     private $userRepository;
 
-    /**
-     * @var IdentityRepository
-     */
-    private $identityRepository;
-
     public function __construct(UserRepository $userRepository, IdentityRepository $identityRepository)
     {
         $this->userRepository = $userRepository;
-        $this->identityRepository = $identityRepository;
+        parent::__construct($identityRepository);
     }
 
     public function __invoke(AddUserIdentity $command)

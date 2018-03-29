@@ -14,6 +14,7 @@ namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model;
 
 use Prooph\EventSourcing\AggregateChanged;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Event\IdentityAdded;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\IdentityDeactivated;
 
 final class Identity extends EventProducerAbstract
 {
@@ -34,6 +35,11 @@ final class Identity extends EventProducerAbstract
         $self->recordThat(new IdentityAdded($identityId, $userId));
 
         return $self;
+    }
+
+    public function deactivate(): void
+    {
+        $this->recordThat(IdentityDeactivated::occur($this->identityId, []));
     }
 
     protected function aggregateId(): string
