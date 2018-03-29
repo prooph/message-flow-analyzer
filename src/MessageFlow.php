@@ -189,10 +189,44 @@ final class MessageFlow
         return $cp;
     }
 
+    public function getNode(string $nodeId, Node $default = null): ?Node
+    {
+        if (! $this->knowsNodeWithId($nodeId)) {
+            return $default;
+        }
+
+        return $this->nodes[$nodeId];
+    }
+
+    public function removeNode(string $nodeId): self
+    {
+        if (! $this->knowsNodeWithId($nodeId)) {
+            return $this;
+        }
+
+        $cp = clone $this;
+        unset($cp[$nodeId]);
+
+        return $cp;
+    }
+
     public function setEdge(Edge $edge): self
     {
         $cp = clone $this;
         $cp->edges[$edge->id()] = $edge;
+
+        return $cp;
+    }
+
+    public function removeEdge(Edge $edge): self
+    {
+        if (! isset($this->edges[$edge->id()])) {
+            return $this;
+        }
+
+        $cp = clone $this;
+
+        unset($cp[$edge->id()]);
 
         return $cp;
     }
