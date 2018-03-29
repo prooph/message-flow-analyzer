@@ -207,6 +207,12 @@ final class MessageFlow
         $cp = clone $this;
         unset($cp[$nodeId]);
 
+        foreach ($this->edges as $edge) {
+            if($edge->sourceNodeId() === $nodeId || $edge->targetNodeId() === $nodeId) {
+                $cp = $cp->removeEdge($edge);
+            }
+        }
+
         return $cp;
     }
 
