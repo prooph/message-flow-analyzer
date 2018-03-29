@@ -383,7 +383,7 @@ class Node
             null,
             $messageProducer->class(),
             $messageProducer->function()
-        ))->withTag($message->type())->withTag('producer')->withIcon(NodeIcon::faSolid('fa-cogs'))->withColor('#1B1C1D');
+        ))->withTag($message->type())->withTag('producer')->withIcon(NodeIcon::faSolid('fa-long-arrow-alt-right'))->withColor('#1B1C1D');
     }
 
     public static function fromArray(array $nodeData)

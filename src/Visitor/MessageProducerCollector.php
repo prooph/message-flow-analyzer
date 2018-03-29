@@ -65,6 +65,8 @@ class MessageProducerCollector implements ClassVisitor
                     if (! $messageFlow->knowsNode($messageProducerNode)) {
                         $messageFlow = $messageFlow->addNode($messageProducerNode);
                     }
+
+                    $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge($messageProducerNode->id(), Util::codeIdentifierToNodeId($message->name())));
                 }
 
                 return $messageFlow;

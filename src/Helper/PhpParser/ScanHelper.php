@@ -214,7 +214,7 @@ class ScanHelper
 
             public function leaveNode(Node $node)
             {
-                if ($node instanceof Node\Expr\MethodCall && $this->recorderClass->hasMethod($node->name)) {
+                if ($node instanceof Node\Expr\MethodCall && is_string($node->name) && $this->recorderClass->hasMethod($node->name)) {
                     $calledMethod = $this->recorderClass->getMethod($node->name);
 
                     $producedMsgs = $this->checkMethodProducesMessages($calledMethod);
