@@ -378,7 +378,7 @@ class Node
         return (new self(
             Util::codeIdentifierToNodeId($messageProducer->identifier()),
             self::TYPE_SERVICE,
-            $messageProducer->identifier(),
+            Util::withoutNamespace($messageProducer->identifier()),
             $messageProducer->filename(),
             null,
             $messageProducer->class(),
