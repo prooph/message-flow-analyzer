@@ -13,6 +13,7 @@ declare(strict_types=1);
 namespace Prooph\MessageFlowAnalyzer\Cli;
 
 use Prooph\MessageFlowAnalyzer\Helper\ProjectTraverserFactory;
+use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorder;
 use Prooph\MessageFlowAnalyzer\MessageFlow\NodeFactory;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -85,6 +86,10 @@ EOT
 
         if (isset($config['nodeClass'])) {
             NodeFactory::useNodeClass($config['nodeClass']);
+        }
+
+        if (isset($config['eventRecorderCheck'])) {
+            EventRecorder::useEventRecorderCheckFunction($config['eventRecorderCheck']);
         }
 
         $traverser = ProjectTraverserFactory::buildTraverserFromConfig($config);

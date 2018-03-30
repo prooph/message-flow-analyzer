@@ -19,7 +19,21 @@ use Roave\BetterReflection\Reflection\ReflectionClass;
 
 final class EventRecorder extends MessageHandlingMethodAbstract
 {
+    private static $isRecorderCb = [EventRecorder::class, 'isProophEventRecorder'];
+
+    public static function useEventRecorderCheckFunction(callable $eventRecorderCheck): void
+    {
+        self::$isRecorderCb = $eventRecorderCheck;
+    }
+
     public static function isEventRecorder(ReflectionClass $reflectionClass): bool
+    {
+        $cb = self::$isRecorderCb;
+
+        return $cb($reflectionClass);
+    }
+
+    public static function isProophEventRecorder(ReflectionClass $reflectionClass): bool
     {
         if ($reflectionClass->isSubclassOf(AggregateRoot::class)) {
             return true;
