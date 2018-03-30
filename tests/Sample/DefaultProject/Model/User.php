@@ -15,6 +15,7 @@ namespace ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model;
 use Prooph\EventSourcing\AggregateChanged;
 use Prooph\EventSourcing\AggregateRoot;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserActivated;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserDeactivated;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UsernameChanged;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserRegistered;
 
@@ -43,6 +44,11 @@ class User extends AggregateRoot
     public function activate(): void
     {
         $this->recordThat(UserActivated::occur($this->userId, []));
+    }
+
+    public function deactivate(): void
+    {
+        $this->recordThat(UserDeactivated::occur($this->userId, []));
     }
 
     public function addIdentity(string $identityId): Identity

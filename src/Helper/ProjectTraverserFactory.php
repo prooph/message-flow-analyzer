@@ -25,6 +25,7 @@ use Prooph\MessageFlowAnalyzer\Visitor\CommandHandlerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\EventListenerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\MessagingCollector;
 
 final class ProjectTraverserFactory
 {
@@ -41,6 +42,7 @@ final class ProjectTraverserFactory
         'MessageProducerCollector' => MessageProducerCollector::class,
         'AggregateMethodCollector' => AggregateMethodCollector::class,
         'EventListenerCollector' => EventListenerCollector::class,
+        'MessagingCollector' => MessagingCollector::class,
     ];
 
     public static $fileInfoVisitorAliases = [];

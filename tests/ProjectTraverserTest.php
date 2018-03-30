@@ -22,9 +22,8 @@ use Prooph\MessageFlowAnalyzer\MessageFlow\Node;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
 use Prooph\MessageFlowAnalyzer\Visitor\AggregateMethodCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\CommandHandlerCollector;
-use Prooph\MessageFlowAnalyzer\Visitor\EventListenerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
-use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\MessagingCollector;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Controller\UserController;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Listener\SendConfirmationEmail;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity;
@@ -55,9 +54,8 @@ class ProjectTraverserTest extends BaseTestCase
             [
                 new MessageCollector(),
                 new CommandHandlerCollector(),
-                new MessageProducerCollector(),
                 new AggregateMethodCollector(),
-                new EventListenerCollector(),
+                new MessagingCollector(),
             ]
         );
 
