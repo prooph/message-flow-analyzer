@@ -232,7 +232,7 @@ final class MessageFlow
 
         $cp = clone $this;
 
-        unset($cp[$edge->id()]);
+        unset($cp->edges[$edge->id()]);
 
         return $cp;
     }
