@@ -80,18 +80,20 @@ class MessagingCollector implements ClassVisitor
             }
 
             if (isset($messageProducers[$node->id()])) {
-                [$producerNode, $producer, $producerMethod, $command] = $messageProducers[$node->id()];
+                [$producerNode, $producer, $producerMethod, $commands] = $messageProducers[$node->id()];
 
-                if (! $messageFlow->knowsMessage($command)) {
-                    $messageFlow = $messageFlow->addMessage($command);
+                foreach ($commands as $command) {
+                    if (! $messageFlow->knowsMessage($command)) {
+                        $messageFlow = $messageFlow->addMessage($command);
+                    }
+
+                    $messageFlow = $this->addProcessManager(
+                        $messageFlow,
+                        MessageFlow\NodeFactory::createMessageNode($event),
+                        MessageFlow\NodeFactory::createMessageNode($command),
+                        $producer
+                    );
                 }
-
-                $messageFlow = $this->addProcessManager(
-                    $messageFlow,
-                    MessageFlow\NodeFactory::createMessageNode($event),
-                    MessageFlow\NodeFactory::createMessageNode($command),
-                    $producer
-                );
 
                 $handledProducers[] = $node->id();
                 continue;
@@ -111,19 +113,22 @@ class MessagingCollector implements ClassVisitor
                 );
             } else {
                 foreach ($invokedProducers as $invokedProducerId) {
-                    [$producerNode, $producer, $producerMethod, $command] = $messageProducers[$invokedProducerId];
+                    [$producerNode, $producer, $producerMethod, $commands] = $messageProducers[$invokedProducerId];
 
-                    if (! $messageFlow->knowsMessage($command)) {
-                        $messageFlow = $messageFlow->addMessage($command);
+                    foreach ($commands as $command) {
+                        if (! $messageFlow->knowsMessage($command)) {
+                            $messageFlow = $messageFlow->addMessage($command);
+                        }
+
+                        $messageFlow = $this->addProcessManager(
+                            $messageFlow,
+                            MessageFlow\NodeFactory::createMessageNode($event),
+                            MessageFlow\NodeFactory::createMessageNode($command),
+                            $producer,
+                            $method
+                        );
                     }
 
-                    $messageFlow = $this->addProcessManager(
-                        $messageFlow,
-                        MessageFlow\NodeFactory::createMessageNode($event),
-                        MessageFlow\NodeFactory::createMessageNode($command),
-                        $producer,
-                        $method
-                    );
                     $handledProducers[] = $invokedProducerId;
                 }
             }
@@ -132,19 +137,21 @@ class MessagingCollector implements ClassVisitor
         $unhandledProducers = array_diff(array_keys($messageProducers), $handledProducers);
 
         foreach ($unhandledProducers as $producerNodeId) {
-            [$producerNode, $producer, $producerMethod, $command] = $messageProducers[$producerNodeId];
+            [$producerNode, $producer, $producerMethod, $commands] = $messageProducers[$producerNodeId];
 
-            if (! $messageFlow->knowsMessage($command)) {
-                $messageFlow = $messageFlow->addMessage($command);
+            foreach ($commands as $command) {
+                if (! $messageFlow->knowsMessage($command)) {
+                    $messageFlow = $messageFlow->addMessage($command);
+                }
+
+                $messageProducerNode = MessageFlow\NodeFactory::createMessageProducingServiceNode($producer, $command);
+
+                if (! $messageFlow->knowsNode($messageProducerNode)) {
+                    $messageFlow = $messageFlow->addNode($messageProducerNode);
+                }
+
+                $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge($messageProducerNode->id(), Util::codeIdentifierToNodeId($command->name())));
             }
-
-            $messageProducerNode = MessageFlow\NodeFactory::createMessageProducingServiceNode($producer, $command);
-
-            if (! $messageFlow->knowsNode($messageProducerNode)) {
-                $messageFlow = $messageFlow->addNode($messageProducerNode);
-            }
-
-            $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge($messageProducerNode->id(), Util::codeIdentifierToNodeId($command->name())));
         }
 
         return $messageFlow;
@@ -175,7 +182,16 @@ class MessagingCollector implements ClassVisitor
                 $messageProducer = MessageFlow\MessageProducer::fromReflectionMethod($method);
 
                 $node = MessageFlow\NodeFactory::createMessageProducingServiceNode($messageProducer, $message);
-                $messageProducers[$node->id()] = [$node, $messageProducer, $method, $message];
+
+                if (isset($messageProducers[$node->id()])) {
+                    [$n, $m, $me, $messages] = $messageProducers[$node->id()];
+                } else {
+                    $messages = [];
+                }
+
+                $messages[] = $message;
+
+                $messageProducers[$node->id()] = [$node, $messageProducer, $method, $messages];
 
                 return $messageFlow;
             },
