@@ -88,7 +88,7 @@ final class MessageScanner extends NodeVisitorAbstract
 
         $messageName = null;
 
-        if (is_string($node->var->name) && isset($this->messageFactoryProperties[$node->var->name])
+        if (isset($node->var->name) && is_string($node->var->name) && isset($this->messageFactoryProperties[$node->var->name])
             && isset($node->args[0])) {
             $messageNameArg = $node->args[0];
 
