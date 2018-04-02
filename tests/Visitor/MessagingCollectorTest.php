@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace ProophTest\MessageFlowAnalyzer\Visitor;
 
+use Prooph\MessageFlowAnalyzer\Helper\MessageClassProvider;
 use Prooph\MessageFlowAnalyzer\Helper\Util;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Edge;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Node;
@@ -19,12 +20,17 @@ use Prooph\MessageFlowAnalyzer\Visitor\MessagingCollector;
 use ProophTest\MessageFlowAnalyzer\BaseTestCase;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Controller\UserController;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity\Command\AddIdentity;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\ActivateUser;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\ChangeUsername;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\DeactivateIdentity;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\DeactivateUser;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUser;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\IdentityActivated;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\IdentityDeactivated;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserDeactivated;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\ProcessManager\IdentityAdder;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\ProcessManager\SyncActiveStatus;
+use Prophecy\Argument;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 
 class MessagingCollectorTest extends BaseTestCase
@@ -118,6 +124,69 @@ class MessagingCollectorTest extends BaseTestCase
             (new Edge(
                 Util::codeIdentifierToNodeId(SyncActiveStatus::class . '::deactivateIdentities'),
                 Util::codeIdentifierToNodeId(DeactivateIdentity::class)
+            ))->id(),
+            $msgFlow->edges()
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_detects_message_production_if_message_factory_is_used()
+    {
+        $msgFlow = $this->getDefaultProjectMessageFlow();
+
+        $processManager = ReflectionClass::createFromName(SyncActiveStatus::class);
+
+        $msgFlow = $this->cut->onClassReflection($processManager, $msgFlow);
+
+        $this->assertArrayHasKey(
+            (new Edge(
+                Util::codeIdentifierToNodeId(IdentityDeactivated::class),
+                Util::codeIdentifierToNodeId(SyncActiveStatus::class . '::onIdentityDeactivated')
+            ))->id(),
+            $msgFlow->edges()
+        );
+
+        $this->assertArrayHasKey(
+            (new Edge(
+                Util::codeIdentifierToNodeId(SyncActiveStatus::class . '::onIdentityDeactivated'),
+                Util::codeIdentifierToNodeId(DeactivateUser::class)
+            ))->id(),
+            $msgFlow->edges()
+        );
+    }
+
+    /**
+     * @test
+     */
+    public function it_detects_message_production_if_message_factory_is_used_and_message_name_is_referenced_by_a_constant()
+    {
+        $msgFlow = $this->getDefaultProjectMessageFlow();
+
+        $processManager = ReflectionClass::createFromName(SyncActiveStatus::class);
+
+        $messageClassProvider = $this->prophesize(MessageClassProvider::class);
+        $messageClassProvider->provideClass(Argument::exact('ActivateUser'))->willReturn(ActivateUser::class)->shouldBeCalled();
+        $messageClassProvider->provideClass(Argument::not(Argument::exact('ActivateUser')))->will(function ($args) {
+            return $args[0];
+        });
+        MessagingCollector::useMessageClassProvider($messageClassProvider->reveal());
+
+        $msgFlow = $this->cut->onClassReflection($processManager, $msgFlow);
+
+        $this->assertArrayHasKey(
+            (new Edge(
+                Util::codeIdentifierToNodeId(IdentityActivated::class),
+                Util::codeIdentifierToNodeId(SyncActiveStatus::class . '::onIdentityActivated')
+            ))->id(),
+            $msgFlow->edges()
+        );
+
+        $this->assertArrayHasKey(
+            (new Edge(
+                Util::codeIdentifierToNodeId(SyncActiveStatus::class . '::onIdentityActivated'),
+                Util::codeIdentifierToNodeId(ActivateUser::class)
             ))->id(),
             $msgFlow->edges()
         );

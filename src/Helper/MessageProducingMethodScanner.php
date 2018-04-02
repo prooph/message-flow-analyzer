@@ -31,10 +31,12 @@ trait MessageProducingMethodScanner
         MessageFlow $msgFlow,
         ReflectionClass $reflectionClass,
         callable $onMessageProducingMethodCb,
-        callable $onNonMessageProducingMethodCb = null
+        callable $onNonMessageProducingMethodCb = null,
+        MessageClassProvider $messageClassProvider = null,
+        array $messageFactoryProperties = []
     ): MessageFlow {
         foreach ($reflectionClass->getMethods() as $method) {
-            $messages = $this->checkMethodProducesMessages($method);
+            $messages = $this->checkMethodProducesMessages($method, $messageClassProvider, $messageFactoryProperties);
 
             if (count($messages)) {
                 foreach ($messages as $message) {
@@ -51,9 +53,11 @@ trait MessageProducingMethodScanner
 
     /**
      * @param ReflectionMethod $method
-     * @return Message[]|null
+     * @param MessageClassProvider|null $messageClassProvider
+     * @param array $messageFactoryProperties
+     * @return array
      */
-    private function checkMethodProducesMessages(ReflectionMethod $method): array
+    private function checkMethodProducesMessages(ReflectionMethod $method, MessageClassProvider $messageClassProvider = null, array $messageFactoryProperties = []): array
     {
         try {
             $bodyAst = $method->getBodyAst();
@@ -61,17 +65,15 @@ trait MessageProducingMethodScanner
             return [];
         }
 
-        $this->getTraverser()->traverse($bodyAst);
+        $traverser = $this->getTraverser($messageClassProvider, $messageFactoryProperties);
 
-        return $this->getTraverser()->messageScanner()->popFoundMessages();
+        $traverser->traverse($bodyAst);
+
+        return $traverser->messageScanner()->popFoundMessages();
     }
 
-    private function getTraverser(): MessageScanningNodeTraverser
+    private function getTraverser(MessageClassProvider $messageClassProvider = null, array $messageFactoryProperties = []): MessageScanningNodeTraverser
     {
-        if (null === $this->nodeTraverser) {
-            $this->nodeTraverser = new MessageScanningNodeTraverser(new NodeTraverser(), new MessageScanner());
-        }
-
-        return $this->nodeTraverser;
+        return new MessageScanningNodeTraverser(new NodeTraverser(), new MessageScanner($messageClassProvider, $messageFactoryProperties));
     }
 }

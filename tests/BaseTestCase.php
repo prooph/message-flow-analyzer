@@ -13,12 +13,24 @@ declare(strict_types=1);
 namespace ProophTest\MessageFlowAnalyzer;
 
 use PHPUnit\Framework\TestCase;
+use Prooph\MessageFlowAnalyzer\Helper\MessageClassProvider;
 use Prooph\MessageFlowAnalyzer\MessageFlow;
+use Prooph\MessageFlowAnalyzer\Visitor\MessagingCollector;
+use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\ActivateUser;
+use Prophecy\Argument;
 
 class BaseTestCase extends TestCase
 {
     protected function getDefaultProjectMessageFlow(): MessageFlow
     {
+        $messageClassProvider = $this->prophesize(MessageClassProvider::class);
+        $messageClassProvider->provideClass(Argument::exact('ActivateUser'))->willReturn(ActivateUser::class);
+        $messageClassProvider->provideClass(Argument::not(Argument::exact('ActivateUser')))->will(function ($args) {
+            return $args[0];
+        });
+
+        MessagingCollector::useMessageClassProvider($messageClassProvider->reveal());
+
         return MessageFlow::newFlow('default', __DIR__ . '/Sample/DefaultProject');
     }
 }

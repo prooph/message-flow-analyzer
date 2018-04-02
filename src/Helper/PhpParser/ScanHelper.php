@@ -16,6 +16,7 @@ use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use Prooph\Common\Messaging\Message as ProophMsg;
+use Prooph\Common\Messaging\MessageFactory;
 use Prooph\MessageFlowAnalyzer\MessageFlow;
 use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorder;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
@@ -24,6 +25,7 @@ use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
 use Roave\BetterReflection\Reflection\ReflectionParameter;
 use Roave\BetterReflection\Reflection\ReflectionType;
+use Roave\BetterReflection\Reflector\Exception\IdentifierNotFound;
 
 class ScanHelper
 {
@@ -101,6 +103,29 @@ class ScanHelper
         $traverser->traverse($handleMethod->getBodyAst());
 
         return $nodeVisitor->getEventRecorders();
+    }
+
+    public static function findMessageFactoryProperties(ReflectionClass $reflectionClass): array
+    {
+        if (! $reflectionClass->hasMethod('__construct')) {
+            return [];
+        }
+
+        $constructor = $reflectionClass->getMethod('__construct');
+
+        $properties = [];
+
+        foreach ($constructor->getParameters() as $parameter) {
+            if ($messageFactory = self::isMessageFactoryParameter($parameter)) {
+                $propertyName = self::getPropertyNameForParameter($constructor, $parameter->getName());
+
+                if ($propertyName) {
+                    $properties[$propertyName] = $messageFactory;
+                }
+            }
+        }
+
+        return $properties;
     }
 
     /**
@@ -410,6 +435,33 @@ class ScanHelper
                     }
                 }
             }
+        }
+
+        return null;
+    }
+
+    private static function isMessageFactoryParameter(ReflectionParameter $parameter): ?ReflectionClass
+    {
+        if (! $parameter->hasType()) {
+            return null;
+        }
+
+        if ($parameter->getType()->isBuiltin()) {
+            return null;
+        }
+
+        try {
+            $paramReflectionClass = ReflectionClass::createFromName((string) $parameter->getType());
+        } catch (IdentifierNotFound $exception) {
+            return null;
+        }
+
+        if ($paramReflectionClass->getName() === MessageFactory::class) {
+            return $paramReflectionClass;
+        }
+
+        if ($paramReflectionClass->implementsInterface(MessageFactory::class)) {
+            return $paramReflectionClass;
         }
 
         return null;

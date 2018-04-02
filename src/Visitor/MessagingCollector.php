@@ -16,6 +16,8 @@ use PhpParser\Node as ParserNode;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
 use Prooph\Common\Messaging\Message as ProophMsg;
+use Prooph\MessageFlowAnalyzer\Helper\MessageClassProvider;
+use Prooph\MessageFlowAnalyzer\Helper\MessageNameEqualsClassProvider;
 use Prooph\MessageFlowAnalyzer\Helper\MessageProducingMethodScanner;
 use Prooph\MessageFlowAnalyzer\Helper\PhpParser\ScanHelper;
 use Prooph\MessageFlowAnalyzer\Helper\Util;
@@ -27,6 +29,18 @@ class MessagingCollector implements ClassVisitor
 {
     use MessageProducingMethodScanner;
 
+    private static $messageClassProvider;
+
+    public static function useMessageClassProvider(MessageClassProvider $messageClassProvider): void
+    {
+        self::$messageClassProvider = $messageClassProvider;
+    }
+
+    public static function useDefaultMessageClassProvider(): void
+    {
+        self::$messageClassProvider = null;
+    }
+
     public function onClassReflection(ReflectionClass $reflectionClass, MessageFlow $messageFlow): MessageFlow
     {
         if ($reflectionClass->implementsInterface(ProophMsg::class)) {
@@ -36,6 +50,8 @@ class MessagingCollector implements ClassVisitor
         if (MessageFlow\EventRecorder::isEventRecorder($reflectionClass)) {
             return $messageFlow;
         }
+
+        $messageFactoryProperties = ScanHelper::findMessageFactoryProperties($reflectionClass);
 
         $methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
 
@@ -50,7 +66,7 @@ class MessagingCollector implements ClassVisitor
             }
         }
 
-        $messageProducers = $this->findMessageProducers($reflectionClass, $messageFlow);
+        $messageProducers = $this->findMessageProducers($reflectionClass, $messageFlow, $messageFactoryProperties);
         $handledProducers = [];
 
         foreach ($eventListeners as [$node, $eventListener, $method, $event]) {
@@ -148,7 +164,7 @@ class MessagingCollector implements ClassVisitor
         return [$node, $eventListener, $method, $message];
     }
 
-    private function findMessageProducers(ReflectionClass $reflectionClass, MessageFlow $messageFlow): array
+    private function findMessageProducers(ReflectionClass $reflectionClass, MessageFlow $messageFlow, array $messageFactoryProperties): array
     {
         $messageProducers = [];
 
@@ -162,7 +178,10 @@ class MessagingCollector implements ClassVisitor
                 $messageProducers[$node->id()] = [$node, $messageProducer, $method, $message];
 
                 return $messageFlow;
-            }
+            },
+            null,
+            $this->getMessageClassProvider(),
+            $messageFactoryProperties
         );
 
         return $messageProducers;
@@ -249,5 +268,14 @@ class MessagingCollector implements ClassVisitor
         $messageFlow = $messageFlow->setEdge(new MessageFlow\Edge($event->id(), $eventListener->id()));
 
         return $messageFlow;
+    }
+
+    private function getMessageClassProvider(): MessageClassProvider
+    {
+        if (null === self::$messageClassProvider) {
+            self::$messageClassProvider = new MessageNameEqualsClassProvider();
+        }
+
+        return self::$messageClassProvider;
     }
 }

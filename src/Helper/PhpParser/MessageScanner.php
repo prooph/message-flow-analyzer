@@ -15,6 +15,7 @@ namespace Prooph\MessageFlowAnalyzer\Helper\PhpParser;
 use PhpParser\Node;
 use PhpParser\NodeVisitorAbstract;
 use Prooph\Common\Messaging\Message as ProophMsg;
+use Prooph\MessageFlowAnalyzer\Helper\MessageClassProvider;
 use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
@@ -22,6 +23,27 @@ use Roave\BetterReflection\Reflection\ReflectionMethod;
 final class MessageScanner extends NodeVisitorAbstract
 {
     private $messages = [];
+
+    /**
+     * @var MessageClassProvider
+     */
+    private $messageClassProvider;
+
+    /**
+     * @var ReflectionClass[] indexed by property name
+     */
+    private $messageFactoryProperties;
+
+    /**
+     * MessageScanner constructor.
+     * @param MessageClassProvider $messageClassProvider
+     * @param ReflectionClass[] $messageFactoryProperties indexed by property name
+     */
+    public function __construct(MessageClassProvider $messageClassProvider = null, array $messageFactoryProperties = [])
+    {
+        $this->messageClassProvider = $messageClassProvider;
+        $this->messageFactoryProperties = $messageFactoryProperties;
+    }
 
     public function leaveNode(Node $node)
     {
@@ -54,6 +76,41 @@ final class MessageScanner extends NodeVisitorAbstract
                 && Message::isRealMessage($reflectionClass)) {
                 $this->messages[] = Message::fromReflectionClass($reflectionClass);
             }
+        }
+
+        if (! $this->messageClassProvider) {
+            return;
+        }
+
+        if (! $node instanceof Node\Expr\MethodCall) {
+            return;
+        }
+
+        $messageName = null;
+
+        if (is_string($node->var->name) && isset($this->messageFactoryProperties[$node->var->name])
+            && isset($node->args[0])) {
+            $messageNameArg = $node->args[0];
+
+            if ($messageNameArg->value instanceof Node\Expr\ClassConstFetch && $messageNameArg->value->class instanceof Node\Name\FullyQualified) {
+                if (mb_strtolower($messageNameArg->value->name) === 'class') {
+                    $messageName = (string) $messageNameArg->value->class;
+                } else {
+                    $messageName = ReflectionClass::createFromName((string) $messageNameArg->value->class)
+                        ->getConstant($messageNameArg->value->name);
+                }
+            }
+        }
+
+        if (null === $messageName) {
+            return;
+        }
+
+        $reflectionClass = ReflectionClass::createFromName($this->messageClassProvider->provideClass($messageName));
+
+        if ($reflectionClass->implementsInterface(ProophMsg::class)
+            && Message::isRealMessage($reflectionClass)) {
+            $this->messages[] = Message::fromReflectionClass($reflectionClass);
         }
     }
 

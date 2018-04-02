@@ -12,9 +12,12 @@ declare(strict_types=1);
 
 namespace Prooph\MessageFlowAnalyzer\Cli;
 
+use Prooph\MessageFlowAnalyzer\Helper\MessageClassProvider;
 use Prooph\MessageFlowAnalyzer\Helper\ProjectTraverserFactory;
 use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorder;
 use Prooph\MessageFlowAnalyzer\MessageFlow\NodeFactory;
+use Prooph\MessageFlowAnalyzer\Visitor\MessagingCollector;
+use Roave\BetterReflection\Reflection\ReflectionClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -90,6 +93,17 @@ EOT
 
         if (isset($config['eventRecorderCheck'])) {
             EventRecorder::useEventRecorderCheckFunction($config['eventRecorderCheck']);
+        }
+
+        if (isset($config['messageClassProvider'])) {
+            $messageClassProvider = ReflectionClass::createFromName($config['messageClassProvider']);
+
+            if (! $messageClassProvider->implementsInterface(MessageClassProvider::class)) {
+                throw new \RuntimeException("Message factory factory {$messageClassProvider->getName()} does not implement " . MessageClassProvider::class);
+            }
+
+            $messageClassProvider = $messageClassProvider->getName();
+            MessagingCollector::useMessageClassProvider(new $messageClassProvider());
         }
 
         $traverser = ProjectTraverserFactory::buildTraverserFromConfig($config);
