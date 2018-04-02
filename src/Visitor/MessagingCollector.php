@@ -53,7 +53,7 @@ class MessagingCollector implements ClassVisitor
 
         $messageFactoryProperties = ScanHelper::findMessageFactoryProperties($reflectionClass);
 
-        $methods = $reflectionClass->getMethods(\ReflectionMethod::IS_PUBLIC);
+        $methods = $reflectionClass->getMethods();
 
         $eventListeners = [];
 
