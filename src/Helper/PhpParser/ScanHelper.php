@@ -410,7 +410,7 @@ class ScanHelper
         return null;
     }
 
-    private static function isEventRecorderRepositoryParameter(ReflectionParameter $parameter, bool $inspectChildParameters = true): ?ReflectionClass
+    public static function isEventRecorderRepositoryParameter(ReflectionParameter $parameter, bool $inspectChildParameters = true): ?ReflectionClass
     {
         if (! $parameter->hasType()) {
             return null;
@@ -440,7 +440,7 @@ class ScanHelper
         return null;
     }
 
-    private static function isMessageFactoryParameter(ReflectionParameter $parameter): ?ReflectionClass
+    public static function isMessageFactoryParameter(ReflectionParameter $parameter): ?ReflectionClass
     {
         if (! $parameter->hasType()) {
             return null;
@@ -467,7 +467,7 @@ class ScanHelper
         return null;
     }
 
-    private static function getPropertyNameForParameter(ReflectionMethod $method, string $parameterName): ?string
+    public static function getPropertyNameForParameter(ReflectionMethod $method, string $parameterName): ?string
     {
         $nodeVisitor = new class($parameterName) extends NodeVisitorAbstract {
             private $parameterName;
