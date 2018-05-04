@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,12 +16,14 @@ use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeTestsDir;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
+use Prooph\MessageFlowAnalyzer\Helper\Util;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Edge;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Node;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
-use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderCollector;
-use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderInvokerCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\AggregateMethodCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\CommandHandlerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
-use Prooph\MessageFlowAnalyzer\Visitor\MessageHandlerCollector;
-use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\MessagingCollector;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Controller\UserController;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Listener\SendConfirmationEmail;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\Identity;
@@ -31,7 +33,6 @@ use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\ChangeUsername;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUser;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUserHandler;
-use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UsernameChanged;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Event\UserRegistered;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\ProcessManager\IdentityAdder;
 
@@ -52,76 +53,73 @@ class ProjectTraverserTest extends BaseTestCase
             ],
             [
                 new MessageCollector(),
-                new MessageHandlerCollector(),
-                new MessageProducerCollector(),
-                new EventRecorderCollector(),
-                new EventRecorderInvokerCollector(),
+                new CommandHandlerCollector(),
+                new AggregateMethodCollector(),
+                new MessagingCollector(),
             ]
         );
 
-        $msgFlow = $projectTraverser->traverse(__DIR__.'/Sample/DefaultProject');
+        $msgFlow = $projectTraverser->traverse(__DIR__ . '/Sample/DefaultProject');
 
         $this->assertEquals('default', $msgFlow->project());
-        $this->assertEquals(__DIR__.DIRECTORY_SEPARATOR.'Sample'.DIRECTORY_SEPARATOR.'DefaultProject', $msgFlow->rootDir());
+        $this->assertEquals(__DIR__ . DIRECTORY_SEPARATOR . 'Sample' . DIRECTORY_SEPARATOR . 'DefaultProject', $msgFlow->rootDir());
 
-        $messageNames = array_keys($msgFlow->messages());
-        sort($messageNames);
+        $expectedNodes = [
+            Util::codeIdentifierToNodeId(AddIdentity::class) => [Node::TYPE_COMMAND, AddIdentity::class],
+            Util::codeIdentifierToNodeId(IdentityAdded::class) => [Node::TYPE_EVENT, IdentityAdded::class],
+            Util::codeIdentifierToNodeId(User\Command\AddUserIdentity::class) => [Node::TYPE_COMMAND, User\Command\AddUserIdentity::class],
+            Util::codeIdentifierToNodeId(ChangeUsername::class) => [Node::TYPE_COMMAND, ChangeUsername::class],
+            Util::codeIdentifierToNodeId(RegisterUser::class) => [Node::TYPE_COMMAND, RegisterUser::class],
+            Util::codeIdentifierToNodeId(UserRegistered::class) => [Node::TYPE_EVENT, UserRegistered::class],
+            Util::codeIdentifierToNodeId(User\Event\UserActivated::class) => [Node::TYPE_EVENT, UserRegistered::class],
+            Util::codeIdentifierToNodeId(RegisterUserHandler::class . '::__invoke') => [Node::TYPE_HANDLER, RegisterUserHandler::class . '::__invoke'],
+            Util::codeIdentifierToNodeId(UserController::class . '::postAction') => [Node::TYPE_SERVICE, UserController::class . '::postAction'],
+            Util::codeIdentifierToNodeId(UserController::class . '::patchAction') => [Node::TYPE_SERVICE, UserController::class . '::patchAction'],
+            Util::codeIdentifierToNodeId(SendConfirmationEmail::class.'::onUserRegistered') => [Node::TYPE_LISTENER, SendConfirmationEmail::class.'::onUserRegistered'],
+            Util::codeIdentifierToNodeId(User::class . '::register') => [Node::TYPE_AGGREGATE, User::class . '::register'],
+            Util::codeIdentifierToNodeId(User::class . '::activate') => [Node::TYPE_AGGREGATE, User::class . '::activate'],
+            Util::codeIdentifierToNodeId(User::class) => [Node::TYPE_AGGREGATE, User::class],
+            Util::codeIdentifierToNodeId(IdentityAdder::class . '::onUserRegistered') => [Node::TYPE_PROCESS_MANAGER, IdentityAdder::class . '::onUserRegistered'],
+            Util::codeIdentifierToNodeId(Identity::class . '::add') => [Node::TYPE_AGGREGATE, Identity::class . '::add'],
+            Util::codeIdentifierToNodeId(Identity::class . '::addForUser') => [Node::TYPE_AGGREGATE, Identity::class . '::addForUser'],
+            Util::codeIdentifierToNodeId(Identity::class) => [Node::TYPE_AGGREGATE, Identity::class],
+        ];
 
-        $this->assertEquals([
-            AddIdentity::class,
-            IdentityAdded::class,
-            User\Command\AddUserIdentity::class,
-            ChangeUsername::class,
-            RegisterUser::class,
-            UserRegistered::class,
-            UsernameChanged::class,
-        ], $messageNames);
+        $nodes = $msgFlow->nodes();
 
-        $registerUser = $msgFlow->getMessage(RegisterUser::class);
+        foreach ($expectedNodes as $nodeId => [$nodeType, $codeIdentifier]) {
+            $this->assertTrue(array_key_exists($nodeId, $nodes), "Missing node for $codeIdentifier");
 
-        $this->assertEquals([
-            RegisterUserHandler::class . '::__invoke',
-        ], array_keys($registerUser->handlers()));
+            $this->assertEquals($nodeType, $nodes[$nodeId]->type(), "Wrong node type for $codeIdentifier");
+        }
 
-        $this->assertEquals([
-            UserController::class . '::postAction',
-        ], array_keys($registerUser->producers()));
+        $expectedEdges = [
+            (new Edge(
+                Util::codeIdentifierToNodeId(RegisterUserHandler::class . '::__invoke'),
+                Util::codeIdentifierToNodeId(User::class . '::register')
+            ))->id() => [RegisterUserHandler::class . '::__invoke', User::class . '::register'],
+            (new Edge(
+                Util::codeIdentifierToNodeId(User\Command\ChangeUsernameHandler::class . '::handle'),
+                Util::codeIdentifierToNodeId(User::class . '::changeUsername')
+            ))->id() => [User\Command\ChangeUsernameHandler::class . '::handle', User::class . '::changeUsername'],
+            (new Edge(
+                Util::codeIdentifierToNodeId(User\Command\AddUserIdentityHandler::class . '::__invoke'),
+                Util::codeIdentifierToNodeId(User::class . '::addIdentity')
+            ))->id() => [User\Command\AddUserIdentityHandler::class . '::__invoke', User::class . '::addIdentity'],
+            (new Edge(
+                Util::codeIdentifierToNodeId(User::class . '::addIdentity'),
+                Util::codeIdentifierToNodeId(Identity::class . '::add')
+            ))->id() => [User::class . '::addIdentity', Identity::class . '::add'],
+            (new Edge(
+                Util::codeIdentifierToNodeId(User::class . '::register'),
+                Util::codeIdentifierToNodeId(User::class . '::activate')
+            ))->id() => [User::class . '::register', User::class . '::activate'],
+        ];
 
-        $userRegistered = $msgFlow->getMessage(UserRegistered::class);
+        $edges = $msgFlow->edges();
 
-        $this->assertEquals([
-            SendConfirmationEmail::class.'::onUserRegistered',
-            IdentityAdder::class.'::'.'onUserRegistered',
-        ], array_keys($userRegistered->handlers()));
-
-        $this->assertEquals([
-            User::class.'::register',
-        ], array_keys($userRegistered->recorders()));
-
-        $changeUsername = $msgFlow->getMessage(ChangeUsername::class);
-
-        $this->assertEquals([
-            UserController::class . '::patchAction',
-        ], array_keys($changeUsername->producers()));
-
-        $addIdentity = $msgFlow->getMessage(AddIdentity::class);
-
-        $this->assertEquals([
-            IdentityAdder::class . '::onUserRegistered',
-        ], array_keys($addIdentity->producers()));
-
-        $identityAdded = $msgFlow->getMessage(IdentityAdded::class);
-
-        $this->assertEquals([
-            Identity::class.'::add',
-            Identity::class.'::addForUser',
-        ], array_keys($identityAdded->recorders()));
-
-        $this->assertEquals([
-            RegisterUserHandler::class.'::__invoke->'.User::class.'::register',
-            User\Command\ChangeUsernameHandler::class.'::handle->'.User::class.'::changeUsername',
-            User\Command\AddUserIdentityHandler::class.'::__invoke->'.User::class.'::addIdentity',
-            User::class.'::addIdentity->'.Identity::class.'::add',
-        ], array_keys($msgFlow->eventRecorderInvokers()));
+        foreach ($expectedEdges as $edgeId => [$sourceIdentifier, $targetIdentifier]) {
+            $this->assertTrue(array_key_exists($edgeId, $edges), "Missing edge $sourceIdentifier -> $targetIdentifier");
+        }
     }
 }

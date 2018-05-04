@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,16 +16,16 @@ use Prooph\MessageFlowAnalyzer\Filter\ExcludeHiddenFileInfo;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeTestsDir;
 use Prooph\MessageFlowAnalyzer\Filter\ExcludeVendorDir;
 use Prooph\MessageFlowAnalyzer\Filter\IncludePHPFile;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Finalizer;
 use Prooph\MessageFlowAnalyzer\Output\Formatter;
-use Prooph\MessageFlowAnalyzer\Output\JsonArangoGraphNodes;
-use Prooph\MessageFlowAnalyzer\Output\JsonCytoscapeElements;
 use Prooph\MessageFlowAnalyzer\Output\JsonPrettyPrint;
 use Prooph\MessageFlowAnalyzer\ProjectTraverser;
-use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderCollector;
-use Prooph\MessageFlowAnalyzer\Visitor\EventRecorderInvokerCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\AggregateMethodCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\CommandHandlerCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\EventListenerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
-use Prooph\MessageFlowAnalyzer\Visitor\MessageHandlerCollector;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageProducerCollector;
+use Prooph\MessageFlowAnalyzer\Visitor\MessagingCollector;
 
 final class ProjectTraverserFactory
 {
@@ -38,18 +38,19 @@ final class ProjectTraverserFactory
 
     public static $classVisitorAliases = [
         'MessageCollector' => MessageCollector::class,
-        'MessageHandlerCollector' => MessageHandlerCollector::class,
+        'CommandHandlerCollector' => CommandHandlerCollector::class,
         'MessageProducerCollector' => MessageProducerCollector::class,
-        'EventRecorderCollector' => EventRecorderCollector::class,
-        'EventRecorderInvokerCollector' => EventRecorderInvokerCollector::class,
+        'AggregateMethodCollector' => AggregateMethodCollector::class,
+        'EventListenerCollector' => EventListenerCollector::class,
+        'MessagingCollector' => MessagingCollector::class,
     ];
 
     public static $fileInfoVisitorAliases = [];
 
+    public static $finalizerAliases = [];
+
     public static $outputFormatterAliases = [
         'JsonPrettyPrint' => JsonPrettyPrint::class,
-        'JsonArangoGraphNodes' => JsonArangoGraphNodes::class,
-        'JsonCytoscapeElements' => JsonCytoscapeElements::class,
     ];
 
     public static function buildTraverserFromConfig(array $config): ProjectTraverser
@@ -76,6 +77,26 @@ final class ProjectTraverserFactory
         }
 
         return $traverser;
+    }
+
+    /**
+     * @param array $config
+     * @return Finalizer[]
+     */
+    public static function buildFinalizersFromConfig(array $config): array
+    {
+        $finalizers = [];
+
+        foreach ($config['finalizers'] ?? [] as $finalizerClass) {
+            $finalizerClass = self::$finalizerAliases[$finalizerClass] ?? $finalizerClass;
+            $f = new $finalizerClass();
+            if (! $f instanceof Finalizer) {
+                throw new \InvalidArgumentException("Invalid finalizer: Finalizer interface not implemented by $finalizerClass");
+            }
+            $finalizers[] = $f;
+        }
+
+        return $finalizers;
     }
 
     public static function buildOutputFormatter(string $nameOrClass): Formatter

@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,7 +12,12 @@ declare(strict_types=1);
 
 namespace Prooph\MessageFlowAnalyzer\Cli;
 
+use Prooph\MessageFlowAnalyzer\Helper\MessageClassProvider;
 use Prooph\MessageFlowAnalyzer\Helper\ProjectTraverserFactory;
+use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorder;
+use Prooph\MessageFlowAnalyzer\MessageFlow\NodeFactory;
+use Prooph\MessageFlowAnalyzer\Visitor\MessagingCollector;
+use Roave\BetterReflection\Reflection\ReflectionClass;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -82,10 +87,34 @@ EOT
         $targetFile = $input->getOption('output');
         $formatterName = $input->getOption('format');
 
+        if (isset($config['nodeClass'])) {
+            NodeFactory::useNodeClass($config['nodeClass']);
+        }
+
+        if (isset($config['eventRecorderCheck'])) {
+            EventRecorder::useEventRecorderCheckFunction($config['eventRecorderCheck']);
+        }
+
+        if (isset($config['messageClassProvider'])) {
+            $messageClassProvider = ReflectionClass::createFromName($config['messageClassProvider']);
+
+            if (! $messageClassProvider->implementsInterface(MessageClassProvider::class)) {
+                throw new \RuntimeException("Message factory factory {$messageClassProvider->getName()} does not implement " . MessageClassProvider::class);
+            }
+
+            $messageClassProvider = $messageClassProvider->getName();
+            MessagingCollector::useMessageClassProvider(new $messageClassProvider());
+        }
+
         $traverser = ProjectTraverserFactory::buildTraverserFromConfig($config);
+        $finalizers = ProjectTraverserFactory::buildFinalizersFromConfig($config);
         $formatter = ProjectTraverserFactory::buildOutputFormatter($formatterName);
 
         $msgFlow = $traverser->traverse($rootDir);
+
+        foreach ($finalizers as $finalizer) {
+            $msgFlow = $finalizer->finalize($msgFlow);
+        }
 
         file_put_contents($targetFile, $formatter->messageFlowToString($msgFlow));
 

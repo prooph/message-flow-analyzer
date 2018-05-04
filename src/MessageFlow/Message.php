@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -39,21 +39,6 @@ final class Message
      * @var string
      */
     private $filename;
-
-    /**
-     * @var MessageHandler[]
-     */
-    private $handlers;
-
-    /**
-     * @var MessageProducer[]
-     */
-    private $producers;
-
-    /**
-     * @var EventRecorder[]
-     */
-    private $recorders;
 
     public static function isRealMessage(ReflectionClass $proophMessage): bool
     {
@@ -93,51 +78,30 @@ final class Message
             $messageName,
             $messageType,
             $phpReflectionhMessage->getName(),
-            $phpReflectionhMessage->getFileName(),
-            [],
-            [],
-            []
+            $phpReflectionhMessage->getFileName()
         );
+    }
+
+    public static function fromNode(Node $node): self
+    {
+        if (! in_array($node->type(), Node::MESSAGE_TYPES)) {
+            throw new \InvalidArgumentException('Not a message node: ' . json_encode($node->toArray()));
+        }
+
+        return self::fromReflectionClass(ReflectionClass::createFromName($node->class()));
     }
 
     public static function fromArray(array $data): self
     {
-        $handlers = array_map(function ($handler): MessageHandler {
-            if ($handler instanceof MessageHandler) {
-                return $handler;
-            }
-
-            return MessageHandler::fromArray($handler);
-        }, $data['handlers'] ?? []);
-
-        $producers = array_map(function ($producer): MessageProducer {
-            if ($producer instanceof MessageProducer) {
-                return $producer;
-            }
-
-            return MessageProducer::fromArray($producer);
-        }, $data['producers'] ?? []);
-
-        $recorders = array_map(function ($recorder): EventRecorder {
-            if ($recorder instanceof EventRecorder) {
-                return $recorder;
-            }
-
-            return EventRecorder::fromArray($recorder);
-        }, $data['recorders'] ?? []);
-
         return new self(
             $data['name'] ?? '',
             $data['type'] ?? '',
             $data['class'] ?? '',
-            $data['filename'] ?? '',
-            $handlers,
-            $producers,
-            $recorders
+            $data['filename'] ?? ''
         );
     }
 
-    private function __construct(string $name, string $type, string $class, string $filename, array $handlers, array $producers, array $recorders)
+    private function __construct(string $name, string $type, string $class, string $filename)
     {
         MessageDataAssertion::assertMessageName($name);
 
@@ -153,20 +117,10 @@ final class Message
             throw new \InvalidArgumentException("Message class file not found. Got $filename");
         }
 
-        array_walk($handlers, function (MessageHandler $handler) {
-        });
-        array_walk($producers, function (MessageProducer $producer) {
-        });
-        array_walk($recorders, function (EventRecorder $recorder) {
-        });
-
         $this->name = $name;
         $this->type = $type;
         $this->class = $class;
         $this->filename = $filename;
-        $this->handlers = $handlers;
-        $this->producers = $producers;
-        $this->recorders = $recorders;
     }
 
     /**
@@ -201,54 +155,6 @@ final class Message
         return $this->filename;
     }
 
-    /**
-     * @return MessageHandler[]
-     */
-    public function handlers(): array
-    {
-        return $this->handlers;
-    }
-
-    /**
-     * @return MessageProducer[]
-     */
-    public function producers(): array
-    {
-        return $this->producers;
-    }
-
-    /**
-     * @return EventRecorder[]
-     */
-    public function recorders(): array
-    {
-        return $this->recorders;
-    }
-
-    public function addHandler(MessageHandler $messageHandler): self
-    {
-        $cp = clone $this;
-        $cp->handlers[$messageHandler->identifier()] = $messageHandler;
-
-        return $cp;
-    }
-
-    public function addProducer(MessageProducer $messageProducer): self
-    {
-        $cp = clone $this;
-        $cp->producers[$messageProducer->identifier()] = $messageProducer;
-
-        return $cp;
-    }
-
-    public function addRecorder(EventRecorder $eventRecorder): self
-    {
-        $cp = clone $this;
-        $cp->recorders[$eventRecorder->identifier()] = $eventRecorder;
-
-        return $cp;
-    }
-
     public function toArray(): array
     {
         return [
@@ -256,15 +162,6 @@ final class Message
             'type' => $this->type,
             'class' => $this->class,
             'filename' => $this->filename,
-            'handlers' => array_map(function (MessageHandler $handler) {
-                return $handler->toArray();
-            }, $this->handlers),
-            'producers' => array_map(function (MessageProducer $producer) {
-                return $producer->toArray();
-            }, $this->producers),
-            'recorders' => array_map(function (EventRecorder $recorder) {
-                return $recorder->toArray();
-            }, $this->recorders),
         ];
     }
 

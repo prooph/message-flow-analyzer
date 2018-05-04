@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,6 +12,7 @@ declare(strict_types=1);
 
 namespace ProophTest\MessageFlowAnalyzer\Visitor;
 
+use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Prooph\MessageFlowAnalyzer\Visitor\MessageCollector;
 use ProophTest\MessageFlowAnalyzer\BaseTestCase;
 use ProophTest\MessageFlowAnalyzer\Sample\DefaultProject\Model\User\Command\RegisterUser;
@@ -38,11 +39,11 @@ class MessageCollectorTest extends BaseTestCase
 
         $registerUserRef = ReflectionClass::createFromName(RegisterUser::class);
 
-        $this->assertFalse($msgFlow->knowsMessage(RegisterUser::class));
+        $this->assertFalse($msgFlow->knowsMessage(Message::fromReflectionClass($registerUserRef)));
 
         $msgFlow = $this->cut->onClassReflection($registerUserRef, $msgFlow);
 
-        $this->assertTrue($msgFlow->knowsMessage(RegisterUser::class));
+        $this->assertTrue($msgFlow->knowsMessage(Message::fromReflectionClass($registerUserRef)));
     }
 
     /**

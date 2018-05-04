@@ -1,0 +1,14 @@
+{
+  "title": "Message Flow Analyzer",
+  "content": [
+    {"intro": "introduction.md"},
+    {"analyzer": "analyzer.md"},
+    {"messageflow": "message-flow.md"},
+    {"config": "configuration.md"},
+    {"troubleshooting": "troubleshooting.md"}
+  ],
+  "tocDepth": 1,
+  "numbering": false,
+  "target": "./html",
+  "template": "../vendor/prooph/bookdown-template/templates/main.php"
+}

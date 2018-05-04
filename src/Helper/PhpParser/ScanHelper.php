@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,11 +15,17 @@ namespace Prooph\MessageFlowAnalyzer\Helper\PhpParser;
 use PhpParser\Node;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitorAbstract;
+use Prooph\Common\Messaging\Message as ProophMsg;
+use Prooph\Common\Messaging\MessageFactory;
+use Prooph\MessageFlowAnalyzer\MessageFlow;
 use Prooph\MessageFlowAnalyzer\MessageFlow\EventRecorder;
+use Prooph\MessageFlowAnalyzer\MessageFlow\Message;
 use Prooph\MessageFlowAnalyzer\MessageFlow\MessageHandler;
 use Roave\BetterReflection\Reflection\ReflectionClass;
 use Roave\BetterReflection\Reflection\ReflectionMethod;
 use Roave\BetterReflection\Reflection\ReflectionParameter;
+use Roave\BetterReflection\Reflection\ReflectionType;
+use Roave\BetterReflection\Reflector\Exception\IdentifierNotFound;
 
 class ScanHelper
 {
@@ -99,6 +105,29 @@ class ScanHelper
         return $nodeVisitor->getEventRecorders();
     }
 
+    public static function findMessageFactoryProperties(ReflectionClass $reflectionClass): array
+    {
+        if (! $reflectionClass->hasMethod('__construct')) {
+            return [];
+        }
+
+        $constructor = $reflectionClass->getMethod('__construct');
+
+        $properties = [];
+
+        foreach ($constructor->getParameters() as $parameter) {
+            if ($messageFactory = self::isMessageFactoryParameter($parameter)) {
+                $propertyName = self::getPropertyNameForParameter($constructor, $parameter->getName());
+
+                if ($propertyName) {
+                    $properties[$propertyName] = $messageFactory;
+                }
+            }
+        }
+
+        return $properties;
+    }
+
     /**
      * Returns array of reflected event recorder classes with keys being the associated property names of the recorder repositories
      *
@@ -111,7 +140,6 @@ class ScanHelper
             return [];
         }
 
-        //@TODO Test: parent::__construct but should work, too!
         $constructor = $reflectionClass->getMethod('__construct');
 
         $properties = [];
@@ -138,13 +166,15 @@ class ScanHelper
      */
     public static function findEventRecorderVariables(ReflectionMethod $method, array $eventRecorderRepositoryProperties): array
     {
-        $nodeVisitor = new class($eventRecorderRepositoryProperties) extends NodeVisitorAbstract {
+        $nodeVisitor = new class($eventRecorderRepositoryProperties, $method) extends NodeVisitorAbstract {
             private $eventRecorderRepositoryProperties;
             private $eventRecorderVariables = [];
+            private $handlerMethod;
 
-            public function __construct(array $eventRecorderRepositoryProperties)
+            public function __construct(array $eventRecorderRepositoryProperties, ReflectionMethod $handlerMethod)
             {
                 $this->eventRecorderRepositoryProperties = $eventRecorderRepositoryProperties;
+                $this->handlerMethod = $handlerMethod;
             }
 
             public function leaveNode(Node $node)
@@ -154,20 +184,26 @@ class ScanHelper
                         return;
                     }
 
-                    if (! $node->expr->var instanceof Node\Expr\PropertyFetch) {
-                        return;
-                    }
+                    if ($node->expr->var instanceof Node\Expr\PropertyFetch) {
+                        /** @var Node\Expr\PropertyFetch $propertyFetch */
+                        $propertyFetch = $node->expr->var;
 
-                    /** @var Node\Expr\PropertyFetch $propertyFetch */
-                    $propertyFetch = $node->expr->var;
+                        if (! $propertyFetch->var instanceof Node\Expr\Variable || $propertyFetch->var->name !== 'this') {
+                            return;
+                        }
 
-                    if (! $propertyFetch->var instanceof Node\Expr\Variable || $propertyFetch->var->name !== 'this') {
-                        return;
-                    }
+                        if (array_key_exists($propertyFetch->name, $this->eventRecorderRepositoryProperties)) {
+                            $eventRecorder = $this->eventRecorderRepositoryProperties[$propertyFetch->name];
+                            $this->eventRecorderVariables[$node->var->name] = $eventRecorder;
+                        }
+                    } elseif ($node->expr->var instanceof Node\Expr\Variable && $node->expr->var->name === 'this'
+                                && $this->handlerMethod->getImplementingClass()->hasMethod($node->expr->name)
+                                && $this->handlerMethod->getImplementingClass()->getMethod($node->expr->name)->hasReturnType()) {
+                        $returnType = $this->handlerMethod->getImplementingClass()->getMethod($node->expr->name)->getReturnType();
 
-                    if (array_key_exists($propertyFetch->name, $this->eventRecorderRepositoryProperties)) {
-                        $eventRecorder = $this->eventRecorderRepositoryProperties[$propertyFetch->name];
-                        $this->eventRecorderVariables[$node->var->name] = $eventRecorder;
+                        if ($eventRecorder = ScanHelper::isEventRecorderReturnType($returnType)) {
+                            $this->eventRecorderVariables[$node->var->name] = $eventRecorder;
+                        }
                     }
                 }
             }
@@ -185,7 +221,196 @@ class ScanHelper
         return $nodeVisitor->getEventRecorderVariables();
     }
 
-    private static function isEventRecorderRepositoryParameter(ReflectionParameter $parameter, bool $inspectChildParameters = true): ?ReflectionClass
+    /**
+     * @param EventRecorder $eventRecorder
+     * @return EventRecorder[]|null
+     */
+    public static function checkIfEventRecorderMethodCallsOtherEventRecorders(EventRecorder $eventRecorder): ?array
+    {
+        if (! $eventRecorder->isClass()) {
+            return [];
+        }
+
+        $method = $eventRecorder->toFunctionLike();
+
+        $nodeVisitor = new class($eventRecorder->class(), $method) extends NodeVisitorAbstract {
+            private $recorderClass;
+            private $method;
+            private $eventRecorders;
+            private $nodeTraverser;
+
+            public function __construct(string $recorderClass, ReflectionMethod $method)
+            {
+                $this->recorderClass = ReflectionClass::createFromName($recorderClass);
+                $this->method = $method;
+            }
+
+            public function leaveNode(Node $node)
+            {
+                if ($node instanceof Node\Expr\MethodCall && is_string($node->name) && $this->recorderClass->hasMethod($node->name)) {
+                    $calledMethod = $this->recorderClass->getMethod($node->name);
+
+                    $producedMsgs = $this->checkMethodProducesMessages($calledMethod);
+
+                    if (count($producedMsgs)) {
+                        $this->eventRecorders[] = EventRecorder::fromReflectionMethod($calledMethod);
+                    }
+                }
+            }
+
+            /**
+             * @return EventRecorder[]|null
+             */
+            public function getEventRecorders(): ?array
+            {
+                return $this->eventRecorders;
+            }
+
+            /**
+             * @param ReflectionMethod $method
+             * @return Message[]|null
+             */
+            private function checkMethodProducesMessages(ReflectionMethod $method): array
+            {
+                try {
+                    $bodyAst = $method->getBodyAst();
+                } catch (\TypeError $error) {
+                    return [];
+                }
+
+                $this->getTraverser()->traverse($bodyAst);
+
+                return $this->getTraverser()->messageScanner()->popFoundMessages();
+            }
+
+            private function getTraverser(): MessageScanningNodeTraverser
+            {
+                if (null === $this->nodeTraverser) {
+                    $this->nodeTraverser = new MessageScanningNodeTraverser(new NodeTraverser(), new MessageScanner());
+                }
+
+                return $this->nodeTraverser;
+            }
+        };
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($nodeVisitor);
+        $traverser->traverse($method->getBodyAst());
+
+        return $nodeVisitor->getEventRecorders();
+    }
+
+    public static function checkIfEventRecorderMethodIsUsedAsFactory(EventRecorder $eventRecorder): ?EventRecorder
+    {
+        $method = $eventRecorder->toFunctionLike();
+
+        if (! $method->hasReturnType()) {
+            return null;
+        }
+
+        $returnType = $method->getReturnType();
+
+        if ($returnType->isBuiltin()) {
+            return null;
+        }
+
+        $reflectedReturnType = ReflectionClass::createFromName((string) $returnType);
+
+        if (! EventRecorder::isEventRecorder($reflectedReturnType)) {
+            return null;
+        }
+
+        $nodeVisitor = new class($reflectedReturnType) extends NodeVisitorAbstract {
+            private $reflectedReturnType;
+            private $eventRecorder;
+
+            public function __construct(ReflectionClass $reflectedReturnType)
+            {
+                $this->reflectedReturnType = $reflectedReturnType;
+            }
+
+            public function leaveNode(Node $node)
+            {
+                if ($node instanceof Node\Expr\StaticCall) {
+                    if ($node->class instanceof Node\Name\FullyQualified
+                        && $this->reflectedReturnType->getName() === $node->class->toString()) {
+                        $reflectionClass = ReflectionClass::createFromName($node->class->toString());
+
+                        if (! EventRecorder::isEventRecorder($reflectionClass)) {
+                            return;
+                        }
+
+                        $reflectionMethod = ReflectionMethod::createFromName($node->class->toString(), $node->name);
+                        $this->eventRecorder = EventRecorder::fromReflectionMethod($reflectionMethod);
+                    }
+                }
+            }
+
+            public function getEventRecorder(): ?EventRecorder
+            {
+                return $this->eventRecorder;
+            }
+        };
+
+        $traverser = new NodeTraverser();
+        $traverser->addVisitor($nodeVisitor);
+        $traverser->traverse($method->getBodyAst());
+
+        return $nodeVisitor->getEventRecorder();
+    }
+
+    public static function checkIfMethodHandlesMessage(MessageFlow $messageFlow, ReflectionMethod $method): ?Message
+    {
+        $parameters = $method->getParameters();
+
+        //command handler, event listener -> func($msg): void {}, query handler/finder -> func($msg, $deferred): void {}
+        if (count($parameters) === 0 || count($parameters) > 2) {
+            return null;
+        }
+
+        $parameter = $method->getParameters()[0];
+
+        if (! $parameter->hasType()) {
+            return null;
+        }
+
+        $parameterType = $parameter->getType();
+
+        if ($parameterType->isBuiltin()) {
+            return null;
+        }
+
+        $reflectionClass = ReflectionClass::createFromName((string) $parameterType);
+
+        if (! $reflectionClass->implementsInterface(ProophMsg::class)) {
+            return null;
+        }
+
+        if (! MessageFlow\Message::isRealMessage($reflectionClass)) {
+            return null;
+        }
+
+        $message = MessageFlow\Message::fromReflectionClass($reflectionClass);
+
+        return $messageFlow->getMessage($message->name(), $message);
+    }
+
+    public static function isEventRecorderReturnType(ReflectionType $returnType): ?ReflectionClass
+    {
+        if ($returnType->isBuiltin()) {
+            return null;
+        }
+
+        $eventRecorder = ReflectionClass::createFromName((string) $returnType);
+
+        if (EventRecorder::isEventRecorder($eventRecorder)) {
+            return $eventRecorder;
+        }
+
+        return null;
+    }
+
+    public static function isEventRecorderRepositoryParameter(ReflectionParameter $parameter, bool $inspectChildParameters = true): ?ReflectionClass
     {
         if (! $parameter->hasType()) {
             return null;
@@ -215,7 +440,34 @@ class ScanHelper
         return null;
     }
 
-    private static function getPropertyNameForParameter(ReflectionMethod $method, string $parameterName): ?string
+    public static function isMessageFactoryParameter(ReflectionParameter $parameter): ?ReflectionClass
+    {
+        if (! $parameter->hasType()) {
+            return null;
+        }
+
+        if ($parameter->getType()->isBuiltin()) {
+            return null;
+        }
+
+        try {
+            $paramReflectionClass = ReflectionClass::createFromName((string) $parameter->getType());
+        } catch (IdentifierNotFound $exception) {
+            return null;
+        }
+
+        if ($paramReflectionClass->getName() === MessageFactory::class) {
+            return $paramReflectionClass;
+        }
+
+        if ($paramReflectionClass->implementsInterface(MessageFactory::class)) {
+            return $paramReflectionClass;
+        }
+
+        return null;
+    }
+
+    public static function getPropertyNameForParameter(ReflectionMethod $method, string $parameterName): ?string
     {
         $nodeVisitor = new class($parameterName) extends NodeVisitorAbstract {
             private $parameterName;

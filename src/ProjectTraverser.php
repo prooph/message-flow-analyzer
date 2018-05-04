@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -89,9 +89,13 @@ final class ProjectTraverser
         $iterator = new \RecursiveIteratorIterator($filter);
 
         foreach ($iterator as $file) {
-            /** @var $file \SplFileInfo */
-            if ($file->isFile()) {
-                $msgFlow = $this->handleFile($file, $msgFlow);
+            try {
+                /** @var $file \SplFileInfo */
+                if ($file->isFile()) {
+                    $msgFlow = $this->handleFile($file, $msgFlow);
+                }
+            } catch (\Throwable $e) {
+                throw new \RuntimeException("Error while handling file {$file->getPathname()}. Please see previous exception for details.", $e->getCode(), $e);
             }
         }
 

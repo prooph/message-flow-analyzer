@@ -3,8 +3,8 @@
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
- * (c) 2017-2017 prooph software GmbH <contact@prooph.de>
- * (c) 2017-2017 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -28,16 +28,23 @@ trait MessageProducingMethodScanner
     private $nodeTraverser;
 
     private function checkMessageProduction(
+        MessageFlow $msgFlow,
         ReflectionClass $reflectionClass,
-        callable $addMethodToMessageCb,
-        MessageFlow $msgFlow): MessageFlow
-    {
+        callable $onMessageProducingMethodCb,
+        callable $onNonMessageProducingMethodCb = null,
+        MessageClassProvider $messageClassProvider = null,
+        array $messageFactoryProperties = []
+    ): MessageFlow {
         foreach ($reflectionClass->getMethods() as $method) {
-            $messages = $this->checkMethodProducesMessages($method);
-            foreach ($messages as $message) {
-                $message = $msgFlow->getMessage($message->name(), $message);
-                $message = $addMethodToMessageCb($message, $method);
-                $msgFlow = $msgFlow->setMessage($message);
+            $messages = $this->checkMethodProducesMessages($method, $messageClassProvider, $messageFactoryProperties);
+
+            if (count($messages)) {
+                foreach ($messages as $message) {
+                    $message = $msgFlow->getMessage($message->name(), $message);
+                    $msgFlow = $onMessageProducingMethodCb($msgFlow, $message, $method);
+                }
+            } elseif ($onNonMessageProducingMethodCb) {
+                $msgFlow = $onNonMessageProducingMethodCb($msgFlow, $method);
             }
         }
 
@@ -46,9 +53,11 @@ trait MessageProducingMethodScanner
 
     /**
      * @param ReflectionMethod $method
-     * @return Message[]|null
+     * @param MessageClassProvider|null $messageClassProvider
+     * @param array $messageFactoryProperties
+     * @return array
      */
-    private function checkMethodProducesMessages(ReflectionMethod $method): array
+    private function checkMethodProducesMessages(ReflectionMethod $method, MessageClassProvider $messageClassProvider = null, array $messageFactoryProperties = []): array
     {
         try {
             $bodyAst = $method->getBodyAst();
@@ -56,17 +65,15 @@ trait MessageProducingMethodScanner
             return [];
         }
 
-        $this->getTraverser()->traverse($bodyAst);
+        $traverser = $this->getTraverser($messageClassProvider, $messageFactoryProperties);
 
-        return $this->getTraverser()->messageScanner()->popFoundMessages();
+        $traverser->traverse($bodyAst);
+
+        return $traverser->messageScanner()->popFoundMessages();
     }
 
-    private function getTraverser(): MessageScanningNodeTraverser
+    private function getTraverser(MessageClassProvider $messageClassProvider = null, array $messageFactoryProperties = []): MessageScanningNodeTraverser
     {
-        if (null === $this->nodeTraverser) {
-            $this->nodeTraverser = new MessageScanningNodeTraverser(new NodeTraverser(), new MessageScanner());
-        }
-
-        return $this->nodeTraverser;
+        return new MessageScanningNodeTraverser(new NodeTraverser(), new MessageScanner($messageClassProvider, $messageFactoryProperties));
     }
 }
