@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * This file is part of prooph/message-flow-analyzer.
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
@@ -55,7 +64,7 @@ class EventRecorderInvokerCollectorTest extends BaseTestCase
 
         $this->assertEquals([
             RegisterUserHandler::class.'::__invoke->'.User::class.'::register',
-        ], array_keys($msgFlow->eventRecorderInvokers()));
+        ], \array_keys($msgFlow->eventRecorderInvokers()));
     }
 
     /**
@@ -79,7 +88,7 @@ class EventRecorderInvokerCollectorTest extends BaseTestCase
 
         $this->assertEquals([
             User\Command\ChangeUsernameHandler::class.'::handle->'.User::class.'::changeUsername',
-        ], array_keys($msgFlow->eventRecorderInvokers()));
+        ], \array_keys($msgFlow->eventRecorderInvokers()));
     }
 
     /**
@@ -104,6 +113,6 @@ class EventRecorderInvokerCollectorTest extends BaseTestCase
         $this->assertEquals([
             User\Command\AddUserIdentityHandler::class.'::__invoke->'.User::class.'::addIdentity',
             User::class.'::addIdentity->'.Identity::class.'::add',
-        ], array_keys($msgFlow->eventRecorderInvokers()));
+        ], \array_keys($msgFlow->eventRecorderInvokers()));
     }
 }

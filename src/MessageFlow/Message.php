@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * This file is part of prooph/message-flow-analyzer.
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
@@ -102,7 +111,7 @@ final class Message
 
     public static function fromArray(array $data): self
     {
-        $handlers = array_map(function ($handler): MessageHandler {
+        $handlers = \array_map(function ($handler): MessageHandler {
             if ($handler instanceof MessageHandler) {
                 return $handler;
             }
@@ -110,7 +119,7 @@ final class Message
             return MessageHandler::fromArray($handler);
         }, $data['handlers'] ?? []);
 
-        $producers = array_map(function ($producer): MessageProducer {
+        $producers = \array_map(function ($producer): MessageProducer {
             if ($producer instanceof MessageProducer) {
                 return $producer;
             }
@@ -118,7 +127,7 @@ final class Message
             return MessageProducer::fromArray($producer);
         }, $data['producers'] ?? []);
 
-        $recorders = array_map(function ($recorder): EventRecorder {
+        $recorders = \array_map(function ($recorder): EventRecorder {
             if ($recorder instanceof EventRecorder) {
                 return $recorder;
             }
@@ -141,23 +150,23 @@ final class Message
     {
         MessageDataAssertion::assertMessageName($name);
 
-        if (! in_array($type, self::MESSAGE_TYPES)) {
-            throw new \InvalidArgumentException('Message type must be one of ['.implode(',', self::MESSAGE_TYPES)."]. Got $type");
+        if (! \in_array($type, self::MESSAGE_TYPES)) {
+            throw new \InvalidArgumentException('Message type must be one of ['.\implode(',', self::MESSAGE_TYPES)."]. Got $type");
         }
 
-        if (! class_exists($class)) {
+        if (! \class_exists($class)) {
             throw new \InvalidArgumentException("Unknown message class. Got $class");
         }
 
-        if (! file_exists($filename)) {
+        if (! \file_exists($filename)) {
             throw new \InvalidArgumentException("Message class file not found. Got $filename");
         }
 
-        array_walk($handlers, function (MessageHandler $handler) {
+        \array_walk($handlers, function (MessageHandler $handler) {
         });
-        array_walk($producers, function (MessageProducer $producer) {
+        \array_walk($producers, function (MessageProducer $producer) {
         });
-        array_walk($recorders, function (EventRecorder $recorder) {
+        \array_walk($recorders, function (EventRecorder $recorder) {
         });
 
         $this->name = $name;
@@ -256,13 +265,13 @@ final class Message
             'type' => $this->type,
             'class' => $this->class,
             'filename' => $this->filename,
-            'handlers' => array_map(function (MessageHandler $handler) {
+            'handlers' => \array_map(function (MessageHandler $handler) {
                 return $handler->toArray();
             }, $this->handlers),
-            'producers' => array_map(function (MessageProducer $producer) {
+            'producers' => \array_map(function (MessageProducer $producer) {
                 return $producer->toArray();
             }, $this->producers),
-            'recorders' => array_map(function (EventRecorder $recorder) {
+            'recorders' => \array_map(function (EventRecorder $recorder) {
                 return $recorder->toArray();
             }, $this->recorders),
         ];
@@ -279,6 +288,6 @@ final class Message
 
     public function __toString(): string
     {
-        return json_encode($this->toArray());
+        return \json_encode($this->toArray());
     }
 }

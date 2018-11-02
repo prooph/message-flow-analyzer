@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * This file is part of prooph/message-flow-analyzer.
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
@@ -64,8 +73,8 @@ class ProjectTraverserTest extends BaseTestCase
         $this->assertEquals('default', $msgFlow->project());
         $this->assertEquals(__DIR__.DIRECTORY_SEPARATOR.'Sample'.DIRECTORY_SEPARATOR.'DefaultProject', $msgFlow->rootDir());
 
-        $messageNames = array_keys($msgFlow->messages());
-        sort($messageNames);
+        $messageNames = \array_keys($msgFlow->messages());
+        \sort($messageNames);
 
         $this->assertEquals([
             AddIdentity::class,
@@ -81,47 +90,47 @@ class ProjectTraverserTest extends BaseTestCase
 
         $this->assertEquals([
             RegisterUserHandler::class . '::__invoke',
-        ], array_keys($registerUser->handlers()));
+        ], \array_keys($registerUser->handlers()));
 
         $this->assertEquals([
             UserController::class . '::postAction',
-        ], array_keys($registerUser->producers()));
+        ], \array_keys($registerUser->producers()));
 
         $userRegistered = $msgFlow->getMessage(UserRegistered::class);
 
         $this->assertEquals([
             SendConfirmationEmail::class.'::onUserRegistered',
             IdentityAdder::class.'::'.'onUserRegistered',
-        ], array_keys($userRegistered->handlers()));
+        ], \array_keys($userRegistered->handlers()));
 
         $this->assertEquals([
             User::class.'::register',
-        ], array_keys($userRegistered->recorders()));
+        ], \array_keys($userRegistered->recorders()));
 
         $changeUsername = $msgFlow->getMessage(ChangeUsername::class);
 
         $this->assertEquals([
             UserController::class . '::patchAction',
-        ], array_keys($changeUsername->producers()));
+        ], \array_keys($changeUsername->producers()));
 
         $addIdentity = $msgFlow->getMessage(AddIdentity::class);
 
         $this->assertEquals([
             IdentityAdder::class . '::onUserRegistered',
-        ], array_keys($addIdentity->producers()));
+        ], \array_keys($addIdentity->producers()));
 
         $identityAdded = $msgFlow->getMessage(IdentityAdded::class);
 
         $this->assertEquals([
             Identity::class.'::add',
             Identity::class.'::addForUser',
-        ], array_keys($identityAdded->recorders()));
+        ], \array_keys($identityAdded->recorders()));
 
         $this->assertEquals([
             RegisterUserHandler::class.'::__invoke->'.User::class.'::register',
             User\Command\ChangeUsernameHandler::class.'::handle->'.User::class.'::changeUsername',
             User\Command\AddUserIdentityHandler::class.'::__invoke->'.User::class.'::addIdentity',
             User::class.'::addIdentity->'.Identity::class.'::add',
-        ], array_keys($msgFlow->eventRecorderInvokers()));
+        ], \array_keys($msgFlow->eventRecorderInvokers()));
     }
 }
