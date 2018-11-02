@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * This file is part of the prooph/message-flow-analyzer.
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
@@ -71,11 +80,11 @@ final class MessageFlow
 
     private function __construct(string $project, string $rootDir, array $flow)
     {
-        if (mb_strlen($project) === 0) {
+        if (\mb_strlen($project) === 0) {
             throw new \InvalidArgumentException('Project name must not be empty.');
         }
 
-        if (! is_dir($rootDir)) {
+        if (! \is_dir($rootDir)) {
             throw new \InvalidArgumentException('Root dir is not a directory. Got ' . $rootDir);
         }
         $this->project = $project;
@@ -103,12 +112,12 @@ final class MessageFlow
 
     public function knowsMessage(string $messageName): bool
     {
-        return array_key_exists($messageName, $this->messages);
+        return \array_key_exists($messageName, $this->messages);
     }
 
     public function getMessage(string $name, Message $efault = null): ?Message
     {
-        if (! array_key_exists($name, $this->messages())) {
+        if (! \array_key_exists($name, $this->messages())) {
             return $efault;
         }
 
@@ -146,7 +155,7 @@ final class MessageFlow
 
     public function getAttribute(string $name, $default = null)
     {
-        if (array_key_exists($name, $this->attributes)) {
+        if (\array_key_exists($name, $this->attributes)) {
             return $this->attributes[$name];
         }
 
@@ -233,20 +242,20 @@ final class MessageFlow
 
     public function __toString(): string
     {
-        return json_encode($this->toArray());
+        return \json_encode($this->toArray());
     }
 
     private static function flowFromArray(array $flow): array
     {
         return [
-            'messages' => array_map(function ($msg): Message {
+            'messages' => \array_map(function ($msg): Message {
                 if ($msg instanceof Message) {
                     return $msg;
                 }
 
                 return Message::fromArray($msg);
             }, $flow['messages'] ?? []),
-            'eventRecorderInvokers' => array_map(function ($invoker): EventRecorderInvoker {
+            'eventRecorderInvokers' => \array_map(function ($invoker): EventRecorderInvoker {
                 if ($invoker instanceof EventRecorderInvoker) {
                     return $invoker;
                 }
@@ -260,10 +269,10 @@ final class MessageFlow
     private function flowToArray(): array
     {
         return [
-            'messages' => array_map(function (Message $msg): array {
+            'messages' => \array_map(function (Message $msg): array {
                 return $msg->toArray();
             }, $this->messages),
-            'eventRecorderInvokers' => array_map(function (EventRecorderInvoker $invoker): array {
+            'eventRecorderInvokers' => \array_map(function (EventRecorderInvoker $invoker): array {
                 return $invoker->toArray();
             }, $this->eventRecorderInvokers),
             'attributes' => $this->attributes,

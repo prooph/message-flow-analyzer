@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * This file is part of the prooph/message-flow-analyzer.
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
@@ -68,10 +77,10 @@ class MessageHandlingMethodAbstract
 
     private function __construct(string $type, string $filename, string $function, string $class = null)
     {
-        if (! in_array($type, self::ALL_TYPES)) {
-            throw new \InvalidArgumentException('Message handler should be one of [' . implode(',', self::ALL_TYPES).']. Got ' . $type);
+        if (! \in_array($type, self::ALL_TYPES)) {
+            throw new \InvalidArgumentException('Message handler should be one of [' . \implode(',', self::ALL_TYPES).']. Got ' . $type);
         }
-        if (! file_exists($filename)) {
+        if (! \file_exists($filename)) {
             throw new \InvalidArgumentException('File of message handler could not be found. Got ' . $filename);
         }
         $this->type = $type;
@@ -146,6 +155,6 @@ class MessageHandlingMethodAbstract
 
     public function __toString(): string
     {
-        return json_encode($this->toArray());
+        return \json_encode($this->toArray());
     }
 }

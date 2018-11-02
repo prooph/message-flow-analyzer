@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * This file is part of the prooph/message-flow-analyzer.
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
@@ -104,12 +113,12 @@ final class JsonArangoGraphNodes implements Formatter
         }
 
         $isEventRecorderClass = function (string $identifier) use ($eventRecorderClasses): bool {
-            return array_key_exists(Util::identifierWithoutMethod($identifier), $eventRecorderClasses);
+            return \array_key_exists(Util::identifierWithoutMethod($identifier), $eventRecorderClasses);
         };
 
         $getEventRecorderFactory = function (string $identifer) use ($eventRecorderClasses): MessageFlow\EventRecorder {
             $recorderClass = Util::identifierWithoutMethod($identifer);
-            $factoryMethod = str_replace($recorderClass.MessageFlow\MessageHandlingMethodAbstract::ID_METHOD_DELIMITER, '', $identifer);
+            $factoryMethod = \str_replace($recorderClass.MessageFlow\MessageHandlingMethodAbstract::ID_METHOD_DELIMITER, '', $identifer);
 
             $orgEventRecorder = $eventRecorderClasses[$recorderClass]->toArray();
             $orgEventRecorder['function'] = $factoryMethod;
@@ -149,9 +158,9 @@ final class JsonArangoGraphNodes implements Formatter
             ];
         }
 
-        return json_encode([
-            'messages' => array_values($messages),
-            'handlers' => array_values($handlers),
+        return \json_encode([
+            'messages' => \array_values($messages),
+            'handlers' => \array_values($handlers),
             'edges' => $edges,
         ], JSON_PRETTY_PRINT);
     }

@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * This file is part of the prooph/message-flow-analyzer.
+ * (c) 2017-2018 prooph software GmbH <contact@prooph.de>
+ * (c) 2017-2018 Sascha-Oliver Prolic <saschaprolic@googlemail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 /**
  * This file is part of the prooph/message-flow-analyzer.
@@ -54,26 +63,26 @@ EOT
         $rootDir = $input->getArgument('dir');
 
         if (null === $rootDir) {
-            $rootDir = getcwd();
+            $rootDir = \getcwd();
         }
 
-        $rootDir = realpath($rootDir);
+        $rootDir = \realpath($rootDir);
 
         $output->writeln('Analyzing project dir ' . $rootDir);
 
         $configPath = $input->getOption('config');
 
-        if (! file_exists($configPath)) {
+        if (! \file_exists($configPath)) {
             $output->writeln('<error>Config file '.$configPath.' not found.</error>');
             exit(1);
         }
 
-        $config = json_decode(file_get_contents($configPath), true);
+        $config = \json_decode(\file_get_contents($configPath), true);
 
-        $error = json_last_error();
+        $error = \json_last_error();
 
         if ($error !== JSON_ERROR_NONE) {
-            $output->writeln('<error>Could not parse config file. Invalid JSON: '.json_last_error_msg().'</error>');
+            $output->writeln('<error>Could not parse config file. Invalid JSON: '.\json_last_error_msg().'</error>');
             exit($error);
         }
 
@@ -87,7 +96,7 @@ EOT
 
         $msgFlow = $traverser->traverse($rootDir);
 
-        file_put_contents($targetFile, $formatter->messageFlowToString($msgFlow));
+        \file_put_contents($targetFile, $formatter->messageFlowToString($msgFlow));
 
         $output->writeln('<info>Analysis written to '.$targetFile.'</info> using format: ' . $formatterName);
         exit(0);
